@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>AutoMod Filters v2.0</title>
+
+<!-- ================= CSS STYLING ================= -->
+<style>
+    @font-face {
+        font-family: 'Rethink Sans';
+        src: url('rethink_sans.ttf');
+    }
+
+    /* Fullscreen flex-centered dark background layout */
+    body {
+        display: flex;
+        background: #080808;
+        height: 100vh;
+        overflow: hidden;
+        color: #eaeaea;
+        font-family: Rethink Sans, sans-serif;
+        font-size: 14px;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* Horizontal rule appearance customization */
+    hr {
+        border-top: 1px solid #272727;
+        border-radius: 8px;
+        margin: 16px 0px;
+        background-color: transparent;
+    }
+
+    /* Vert rule appearance customization */
+    .vr {
+        display: inline-block;
+        border-left: 1px solid #272727;
+        border-radius: 8px;
+        width: 1px;
+        margin-right: 8px;
+        align-self: stretch;
+        background-color: transparent;
+    }
+
+    /* Severity-based color indicators */
+    .text_red, .severity-High {
+        color: #CE1616;
+    }
+
+    .text_orange, .severity-Medium {
+        color: #e85b0f;
+    }
+
+    .text_yellow, .severity-Low {
+        color: #efbe0b;
+    }
+
+    .text_green, .severity-None {
+        color: #13A10E;
+    }
+
+    .log-entry {
+        margin-bottom: 8px;
+    }
+
+    /* Main container box styling */
+    .box {
+        background: #080808;
+        border: 1px solid #272727;
+        border-radius: 8px;
+        width: 500px;
+        padding: 16px;
+    }
+
+    /* Inner box for displaying filtered content */
+    .box_inner {
+        background: #080808;
+        border: 1px solid #272727;
+        border-radius: 4px;
+        width: calc(100% - 32px);
+        padding: 16px;
+    }
+
+    /* Input field styling */
+    input, textarea {
+        display: block;
+        background: #080808;
+        width: calc(100% - 16px);
+        color: #eaeaea;
+        border: 1px solid #272727;
+        font-family: Rethink Sans, sans-serif;
+        border-radius: 4px;
+        padding: 8px;
+        outline: none;
+        resize: none;
+        height: 80px;
+    }
+
+    /* Highlighted match using <mark> element */
+    mark {
+        background: #5a4600;
+        color: #eaeaea;
+        border-radius: 2px;
+        padding: 1px 4px;
+    }
+
+    .info {
+        margin-top: 16px;
+    }
+</style>
+</head>
+<body>
+
+<!-- ============= MAIN INTERFACE ============= -->
+<div class="box" style="font-size: 14px; text-align: center;">
+    <b>AutoMod Filters v2.0 API</b><br>
+    <div style="font-size: 12px; margin-top: 4px;">https://api.example.com/v2/auto-mod (soon)</div><br>
+    <!-- Input where user types text -->
+    <textarea id="inputBox" placeholder="Type something..." autocomplete="off"></textarea>
+    <!-- Output area for displaying results -->
+    <div id="output" class="info"></div>
+</div>
+
+<!-- ============= FILTERING SCRIPT ============= -->
+    <script>
+        // List of filters with pattern-based wildcards and severity level
+        const filters = [
+            {
+                name: "Discriminatory",
+                severity: "High",
+                words: ["nigg(e|a)(?rs|s)"],
+                message: "This word has been blocked",
+                bypass: ""
+            },
+            {
+                name: "Profanity",
+                severity: "Low",
+                words: ["*🖕*", "*middle(? )finger*", "*bi(?a)tch*", "*ar(?r)se(? )hole*", "*as(?s)(? )hole*", 
+                "*basta(?r)(?d)*", "*b(o|u)l(?l)(? )lock*", "*stfu*", "*piss*", "*dumbas(?s)*", "*shit*",
+                "*you(?r)(?e)(? )(?a)(? )birch*", "*bish*", "*f(?u)(c|k)*", "*f****", "*s****"],
+                message: "This word has been blocked",
+                bypass: ""
+            },
+            {
+                name: "Profanity Abbreviations",
+                severity: "Low",
+                words: ["fml", "mf", "(?w)tf", "*my(? )(god|lord)*", "o(m|n)(?f)(g|l)", "ist(g|l)",
+                "lm(?f)(a|b)o", "*🤬*", "*(⛱️|🏖️)*"],
+                message: "This word has been blocked",
+                bypass: ""
+            },
+            {
+                name: "Experimental",
+                severity: "Low",
+                words: ["(w|b)ord(?s|ed|ing)"],
+                message: "This word has been limited to experimental accounts",
+                bypass: "Username"
+            }
+        ];
+
+        // Obfuscation mapping for each character:
+        // Allows matching variations of letters using Unicode, homoglyphs, or common substitutions
+        const obfuscation_map = {
+            // This object maps standard characters to regex character classes of obfuscated versions
+            a: "[aA4@ÁÀÂÄÃÅĀĂĄαΔΛД∆𝒶𝔞𝕒𝖆𝘢𝘼𝗮𝙖𝚊Ⓐⓐ🅐🄰𝐚𝖺ᵃₐ𝛂𝛼🇦]",
+            b: "[bB8ß฿βБ𝒷𝔟𝕓𝖇𝘣𝘽𝗯𝙗𝚋Ⓑⓑ🅑🄱𝐛ᵇ𝛃𝛽🇧]",
+            c: "[cC¢©çĆČĈĊςʗС𐐕𝒸𝔠𝕔𝖈𝘤𝘾𝗰𝙘𝚌Ⓒⓒ🅒🄲𝐜ᶜ𝛾🇨]",
+            d: "[dDÐĎĐԀԁԃδȡ𝒹𝔡𝕕𝖉𝘥𝘿𝗱𝙙𝚍Ⓓⓓ🅓🄳𝐝ᵈ𝛅🇩]",
+            e: "[eE3€éèêëēėęΞΣƐ𝑒𝔢𝕖𝖊𝘦𝙀𝗲𝙚𝚎Ⓔⓔ🅔🄴𝐞ᵉₑ🇪]",
+            f: "[fFƒҒ₣𝒻𝔣𝕗𝖋𝘧𝙁𝗳𝙛𝚏Ⓕⓕ🅕🄵𝐟ᶠ🇫]",
+            g: "[gG69ĝğġģɢǥ₲𝓰𝔤𝕘𝖌𝘨𝙂𝗴𝙜𝚐Ⓖⓖ🅖🄶𝐠ᵍ🇬]",
+            h: "[hHĥħнннĦ#𝒽𝔥𝕙𝖍𝘩𝙃𝗵𝙝𝚑Ⓗⓗ🅗🄷𝐡ʰₕ🇭]",
+            i: "[iI1!íìîïīįιІ¡|ǐ𝒾𝔦𝕚𝖎𝘪𝙄𝗶𝙞𝚒Ⓘⓘ🅘🄸𝐢ᶦᵢ🇮*]",
+            j: "[jJĵʝјЈ¿𝒿𝔧𝕛𝖏𝘫𝙅𝗷𝙟𝚓Ⓙⓙ🅙🄹𝐣ʲ🇯]",
+            k: "[kKĸκķĶⱩҠк𝓀𝔨𝕜𝖐𝘬𝙆𝗸𝙠𝚔Ⓚⓚ🅚🄺𝐤ᵏₖ🇰]",
+            l: "[lL1|£łĿĹĻĽ⅃∣𝓁𝔩𝕝𝖑𝘭𝙇𝗹𝙡𝚕Ⓛⓛ🅛🄻𝐥ˡₗ🇱]",
+            m: "[mM₥µмṃṁмм𝓂𝔪𝕞𝖒𝘮𝙈𝗺𝙢𝚖Ⓜⓜ🅜🄼𝐦ᵐₘ🇲]",
+            n: "[nNñńņňŉηпПИИ∏𝓃𝔫𝕟𝖓𝘯𝙉𝗻𝙣𝚗Ⓝⓝ🅝🄽𝐧ⁿₙ🇳]",
+            o: "[oO0°øõöôóòœōΘФ¤◎𝓸𝔬𝕠𝖔𝘰𝙊𝗼𝙤𝚘Ⓞⓞ🅞🄾𝐨ᵒₒ🇴]",
+            p: "[pPþρрҏ₱¶℗℘𝓅𝔭𝕡𝖕𝘱𝙋𝗽𝙥𝚙Ⓟⓟ🅟🄿𝐩ᵖₚ🇵]",
+            q: "[qQ9ǫզԛɋʠ𝓆𝔮𝕢𝖖𝘲𝙌𝗾𝙦𝚚Ⓠⓠ🅠🅀𝐪🇶]",
+            r: "[rR®řŗгѓґяЯ𝓇𝔯𝕣𝖗𝘳𝙍𝗿𝙧𝚛Ⓡⓡ🅡🅁𝐫ʳ🇷]",
+            s: "[sS5$§šśșșѕꜱʂ𝓈𝔰𝕤𝖘𝘴𝙎𝘀𝚠Ⓢⓢ🅢🅂𝐬ˢₛ🇸]",
+            t: "[tT7+†ţŧтт𝓉𝔱𝕥𝖙𝘵𝙏𝗲𝙩𝚝Ⓣⓣ🅣🅃𝐭ᵗₜ🇹]",
+            u: "[uU(_)|üûùúūųµџцџʉ𝓊𝔲𝕦𝖚𝘶𝙐𝗲𝙪𝚞Ⓤⓤ🅤🅄𝐮ᵘᵤ🇺]",
+            v: "[vV√ʌνvⱱѵ𝓋𝔳𝕧𝖛𝘷𝙑𝗲𝙫𝚟Ⓥⓥ🅥🅅𝐯ᵛ🇻]",
+            w: "[wWωŵшщѡẁẃẅ𝓌𝔴𝕨𝖜𝘸𝙒𝗲𝙬𝚠Ⓦⓦ🅦🅆𝐰ʷ🇼]",
+            x: "[xX×χхж𝓍𝔵𝕩𝖝𝘹𝙓𝗲𝙭𝚡Ⓧⓧ🅧🅇𝐱ˣₓ🇽]",
+            y: "[yY¥ýÿŷуҮҰүγ𝓎𝔶𝕪𝖞𝘺𝙔𝗲𝙮𝚢Ⓨⓨ🅨🅈𝐲ʸ🇾☯]",
+            z: "[zZ2žźżʐʑƶℤ𝓏𝔷𝕫𝖟𝘻𝙕𝗲𝙯𝚣Ⓩⓩ🅩🅉𝐳ᶻ🇿]",
+        };
+
+        // Characters here are removed when checking filters
+        const separators = [
+            " ", "-", ".", "_", "*", "^", "~", "`", "=", "+", ",", "|", "/", "\\", "'", "\"", ":", ";", 
+            "(", ")", "[", "]", "{", "}", "<", ">", "@", "#", "!", "$", "%", "?", "\n", "\r",
+            "\u200b", "\u200c", "\u200d", "\u2060"
+        ];
+
+        // Escape regex-special characters in literal text
+        function escapeRegex(s) {
+            return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // Build a full regex pattern from a potentially wildcarded and obfuscated keyword
+        function buildWordRegex(word) {
+            const prefixWildcard = word.startsWith("*");
+            const suffixWildcard = word.endsWith("*");
+            const baseWord = word.replace(/^\*|\*$/g, "").toLowerCase();
+
+            let pattern = "";
+            let i = 0;
+
+            while (i < baseWord.length) {
+                const ch = baseWord[i];
+
+                // Handle optional single char or optional group
+                if (ch === '(' && baseWord[i + 1] === '?') {
+                    i += 2; // skip "(?"
+                    let group = "";
+                    let depth = 1;
+                    while (i < baseWord.length && depth > 0) {
+                        const c = baseWord[i];
+                        if (c === '(') depth++;
+                        if (c === ')') depth--;
+                        if (depth > 0) group += c;
+                        i++;
+                    }
+
+                    if (group.includes('|')) {
+                        // Optional group (a|b|c)
+                        const options = group.split('|').map(opt => {
+                            return opt
+                                .split('')
+                                .map(c => obfuscation_map[c] || escapeRegex(c))
+                                .join(`[${escapeRegex(separators.join(""))}]*`);
+                        });
+                        pattern += `(?:${options.join('|')})?`;
+                    } else {
+                        // Optional single character (?x)
+                        const charPattern = obfuscation_map[group] || escapeRegex(group);
+                        pattern += `(?:${charPattern}[${escapeRegex(separators.join(""))}]*)?`;
+                    }
+                }
+
+                // Handle required group (a|b)
+                else if (ch === '(') {
+                    let group = "";
+                    let depth = 1;
+                    i++; // skip '('
+                    while (i < baseWord.length && depth > 0) {
+                        const c = baseWord[i];
+                        if (c === '(') depth++;
+                        if (c === ')') depth--;
+                        if (depth > 0) group += c;
+                        i++;
+                    }
+
+                    const options = group.split('|').map(opt => {
+                        return opt
+                            .split('')
+                            .map(c => obfuscation_map[c] || escapeRegex(c))
+                            .join(`[${escapeRegex(separators.join(""))}]*`);
+                    });
+
+                    // Add separators *before* and *after* the group as well:
+                    pattern += `[${escapeRegex(separators.join(""))}]*` + `(?:${options.join('|')})` + `[${escapeRegex(separators.join(""))}]*`;
+                }
+
+                // Regular character
+                else {
+                    const charPattern = obfuscation_map[ch] || escapeRegex(ch);
+                    pattern += charPattern;
+                    if (i < baseWord.length - 1) {
+                        pattern += `[${escapeRegex(separators.join(""))}]*`;
+                    }
+                    i++;
+                }
+            }
+
+            // Apply wildcard matching
+            if (prefixWildcard && suffixWildcard) {
+                pattern = `(?<!\\S)\\S*${pattern}\\S*(?!\\S)`;
+            } else if (prefixWildcard) {
+                pattern = `(?<!\\S)\\S*${pattern}(?!\\S)`;
+            } else if (suffixWildcard) {
+                // Here is the important change:
+                const sepClass = `[${escapeRegex(separators.join(''))}]*`;
+                pattern = `(?<!\\S)${sepClass}${pattern}${sepClass}(?!\\S)`;
+            } else {
+                // Also here:
+                const sepClass = `[${escapeRegex(separators.join(''))}]*`;
+                pattern = `(?<!\\S)${sepClass}${pattern}${sepClass}(?!\\S)`;
+            }
+
+            return new RegExp(pattern, "i");
+        }
+
+        function highlight(text, regex) {
+            const sepPattern = separators.map(s => `\\${s}`).join('');
+            const sepRegex = new RegExp(`^[${sepPattern}]+|[${sepPattern}]+$`, 'g');
+
+            return text.replace(regex, match => {
+                const parts = [];
+                let remaining = match;
+                let leading = '', trailing = '';
+
+                const leadingMatch = remaining.match(new RegExp(`^[${sepPattern}]+`));
+                if (leadingMatch) {
+                    leading = leadingMatch[0];
+                    remaining = remaining.slice(leading.length);
+                }
+
+                const trailingMatch = remaining.match(new RegExp(`[${sepPattern}]+$`));
+                if (trailingMatch) {
+                    trailing = trailingMatch[0];
+                    remaining = remaining.slice(0, -trailing.length);
+                }
+
+                return `${leading}<mark>${remaining}</mark>${trailing}`;
+            });
+        }
+
+        // DOM references
+        const inputBox = document.getElementById("inputBox");
+        const output = document.getElementById("output");
+        const username = "Username";
+        const handle = "@username";
+        const checkExtras = true; // Set to false to ignore username/handle in checks
+
+        // Event listener for real-time filtering
+        inputBox.addEventListener("input", () => {
+            const val = inputBox.value;
+            const extraText = checkExtras ? `${username} ${handle}` : "";
+
+            let highlightText = val;
+            let highlightUsername = username;
+            let highlightHandle = handle;
+            let blocked = false;
+            let reason = null;
+            let source = "";
+            let matchedWord = "";
+
+            const matches = [];
+
+            // First, check profile data (username and handle)
+            for (const filter of filters) {
+                for (const word of filter.words) {
+                    const regex = buildWordRegex(word);
+
+                    if (checkExtras && regex.test(username)) {
+                        blocked = filter.bypass !== "AvatarKage";
+                        reason = filter;
+                        matchedWord = word;
+                        source = "Username";
+                        highlightUsername = highlight(username, regex);
+                        break;
+                    }
+
+                    if (checkExtras && regex.test(handle)) {
+                        blocked = filter.bypass !== "AvatarKage";
+                        reason = filter;
+                        matchedWord = word;
+                        source = "Handle";
+                        highlightHandle = highlight(handle, regex);
+                        break;
+                    }
+                }
+                if (blocked) break;
+            }
+
+            // If username/handle clean, scan the input field for ALL matches
+            if (!blocked) {
+                for (const filter of filters) {
+                    for (const word of filter.words) {
+                        const regex = buildWordRegex(word);
+                        if (regex.test(val)) {
+                            matches.push({ regex, word, filter });
+                        }
+                    }
+                }
+
+                if (matches.length > 0) {
+                    blocked = matches[0].filter.bypass !== "AvatarKage";
+                    reason = matches[0].filter;
+                    matchedWord = matches[0].word;
+                    source = "Message";
+
+                    // Highlight ONLY the first matched word in the input
+                    const { regex } = matches[0];
+                    highlightText = highlight(highlightText, regex);
+
+                    // Highlight ALL matched words in the input
+                    //for (const { regex } of matches) {
+                    //    highlightText = highlight(highlightText, regex);
+                    //}
+                }
+            }
+
+            if (blocked) {
+                let flaggedText;
+
+                if (source === "Username") {
+                    const regex = buildWordRegex(matchedWord);
+                    flaggedText = highlightUsername.replace(regex, match => `<mark>${match}</mark>`);
+                } else if (source === "Handle") {
+                    const regex = buildWordRegex(matchedWord);
+                    flaggedText = highlightHandle.replace(regex, match => `<mark>${match}</mark>`);
+                } else {
+                    flaggedText = highlightText.replace(/\n/g, '<br>');
+                }
+
+                output.innerHTML = `
+                    <div class="box_inner" style="position: relative;">
+                        <img src="logo.png" width="16px" style="position: absolute; top: 16px; right: 16px;">
+                        <div style="display: flex; margin-bottom: 16px;">
+                            <div style="font-size: 16px; display: flex; align-items: center; text-align: left;">
+                                <img width="32px" style="border-radius: 32px; margin-right: 8px;" src="pfp.png">
+                                <div style="display: flex; flex-direction: column; line-height: 1.2;">
+                                    <span><b>${source === "Username" ? flaggedText : username}</b></span>
+                                    <span style="font-size: 12px; opacity: 0.65;">${source === "Handle" ? flaggedText : handle}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: flex-start; font-size: 14px; margin-bottom: 16px; text-align: left;">
+                            <span class="vr"></span><div style="flex: 1;">${highlightText.replace(/\n/g, '<br>')}</div>
+                        </div>
+                        <div style="font-size: 10px; text-align: left; opacity: 0.65;">
+                            <b>Keyword: </b>${matchedWord} • <b>Filter: </b>${reason.name} (${reason.severity} Priority) • <b>Source: </b>${source}
+                            <br><b>Message: </b>${reason.message}
+                        </div>
+                    </div>
+                `;
+            } else {
+                output.innerHTML = "";
+            }
+        });
+    </script>
+</body>
+</html>
