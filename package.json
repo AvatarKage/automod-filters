@@ -1,0 +1,8 @@
+{
+  "type": "module",
+  "dependencies": {
+    "@avatarkage/automod": "^0.1.1",
+    "@avatarkage1052/auto-mod": "^0.1.0",
+    "@avatarkage1052/automod": "^0.1.1"
+  }
+}

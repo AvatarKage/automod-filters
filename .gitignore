@@ -1,0 +1,69 @@
+# Ignore Mac system files
+.DS_Store
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+target/
+
+# C/C++
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.*
+
+# VS Code settings
+.vscode/
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# IDEs
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Git
+.git/
+
+# Compiled source
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.pyc
+
+# Coverage reports
+coverage/
+*.lcov
+
+# Custom
+server.js
