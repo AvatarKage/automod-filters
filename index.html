@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>AutoMod Filters v2.0</title>
+<title>@avatarkage/automod</title>
 <link rel="icon" href="https://automod.avatarkage.com/logo.png">
-<meta property="og:title" content="AutoMod Filters v2.0 | BETA API">
+<meta property="og:title" content="@avatarkage/automod">
 <meta property="og:description" content="Upcoming AutoMod API for external apps. Created by AvatarKage and released under MIT license.">
 <meta itemprop="thumbnailUrl" content="https://automod.avatarkage.com/icon.png">
 <meta itemprop="image" content="https://automod.avatarkage.com/icon.png">
@@ -12,17 +12,14 @@
 <meta itemprop="og:image" content="https://automod.avatarkage.com/icon.png">
 <meta property="og:url" content="https://automod.avatarkage.com">
 <meta property="og:type" content="website">
-<meta name="theme-color" content="#2b2d31">
+<meta name="theme-color" content="#4c58e6">
 <meta name="author" content="AvatarKage">
 
-<!-- ================= CSS STYLING ================= -->
 <style>
     @font-face {
         font-family: 'Rethink Sans';
         src: url('rethink_sans.ttf');
     }
-
-    /* Fullscreen flex-centered dark background layout */
     body {
         display: flex;
         background: #080808;
@@ -33,17 +30,18 @@
         font-size: 14px;
         justify-content: center;
         align-items: center;
+        scale: 1;
     }
-
-    /* Horizontal rule appearance customization */
+    .scale-wrapper {
+        transform: scale(1.1);
+        transform-origin: center;
+    }
     hr {
         border-top: 1px solid #272727;
         border-radius: 8px;
         margin: 16px 0px;
         background-color: transparent;
     }
-
-    /* Vert rule appearance customization */
     .vr {
         display: inline-block;
         border-left: 1px solid #272727;
@@ -53,29 +51,21 @@
         align-self: stretch;
         background-color: transparent;
     }
-
-    /* Severity-based color indicators */
     .text_red, .severity-High {
         color: #CE1616;
     }
-
     .text_orange, .severity-Medium {
         color: #e85b0f;
     }
-
     .text_yellow, .severity-Low {
         color: #efbe0b;
     }
-
     .text_green, .severity-None {
         color: #13A10E;
     }
-
     .log-entry {
         margin-bottom: 8px;
     }
-
-    /* Main container box styling */
     .box {
         background: #080808;
         border: 1px solid #272727;
@@ -83,8 +73,6 @@
         width: 500px;
         padding: 16px;
     }
-
-    /* Inner box for displaying filtered content */
     .box_inner {
         background: #080808;
         border: 1px solid #272727;
@@ -92,8 +80,6 @@
         width: calc(100% - 32px);
         padding: 16px;
     }
-
-    /* Input field styling */
     input, textarea {
         display: block;
         background: #080808;
@@ -107,15 +93,12 @@
         resize: none;
         height: 80px;
     }
-
-    /* Highlighted match using <mark> element */
     mark {
         background: #5a4600;
         color: #eaeaea;
         border-radius: 2px;
         padding: 1px 4px;
     }
-
     .info {
         margin-top: 16px;
     }
@@ -123,32 +106,121 @@
 </head>
 <body>
 
-<!-- ============= MAIN INTERFACE ============= -->
-<div class="box" style="font-size: 14px; text-align: center;">
-    <b>AutoMod Filters v2.0 API</b><br>
-    <div style="font-size: 12px; margin-top: 4px;">https://api.example.com/v2/auto-mod (soon)</div><br>
-    <!-- Input where user types text -->
-    <textarea id="inputBox" placeholder="Type something..." autocomplete="off"></textarea>
-    <!-- Output area for displaying results -->
-    <div id="output" class="info"></div>
+<div class="scale-wrapper">
+    <div class="box" style="font-size: 14px; text-align: center;">
+        <b>AutoMod Filters API</b><br>
+        <div style="font-size: 12px; margin-top: 4px;">https://api.avatarka.ge/v1/automod (soon)</div><br>
+        <textarea id="inputBox" placeholder="Type something..." autocomplete="off"></textarea>
+        <div id="output" class="info"></div>
+    </div>
 </div>
 
-<!-- ============= FILTERING SCRIPT ============= -->
-    <script>
-        // List of filters with pattern-based wildcards and severity level
-        const filters = [
+<script>
+    if (typeof automod === "undefined") automod = {};
+    if (typeof automod.filters === "undefined") automod.filters = {};
+
+    const filters = [
             {
                 name: "Discriminatory",
                 severity: "High",
-                words: ["*(🥷|🆖)*", "(?g)ga", "*n(?i|e)g(?a|g|h)(?h|r|e|a)(?a)(?rs|s)*", "*f(?a)ag*", "*retard*",
-                "coon(?s)", "*kike*", "yid(?s)", "*chink*", "ching(?s)", "*gook*", "*slopehead*", "jap(?s)",
-                "*china(? )(wo)m(a|e)n*", "*coolie*", "*sambo*", "*tar(? )baby*", "*jemima(?s)*", "*mamm(?y|ies|s)*",
-                "*pick(? )aninn(?y|ies|s)*", "*gay(? )lord(?s)*", "*dyke*", "*she(? )male*", "*trann(?y|ies|s)*",
-                "*transvestite*", "*cripple*", "*white(? )power*", "n(? )word(?s)", "r(? )word(?s)", "cong(?s)",
-                "*siss(?y|ies|s)*", "hard(?s)r", "*kanker(?s)*", "*lesbo(?s)*", "chong(?s)", "*cotton picker*"],
+                words: ["*(🥷|🆖)*", "(?g)ga", "*n(i|e)g(a|g|h)(h|r|e|a)(?a|r)(?rs|s)*", "ig(?g)(r|e|a)(?a)(?rs|r|s)", "neg(?g)a(?r)(?s)", 
+                    "ng", "nig(?g|e)(?r)(?s)", "*f(?a)ag*", "*retard*",
+                    "coon(?s)", "*kike*", "yid(?s)", "*chink*", "ching(?s)", "*gook*", "*slopehead*", "jap(?s)",
+                    "*china(? )(wo)m(a|e)n*", "*coolie*", "*sambo*", "*tar(? )baby*", "*jemima(?s)*", "*mamm(?y|ies|s)*",
+                    "*pick(? )aninn(?y|ies|s)*", "*gay(? )lord(?s)*", "*dyke*", "*she(? )male*", "*trann(?y|ies|s)*",
+                    "*transvestite*", "*cripple*", "*white(? )power*", "n(? )word(?s)", "r(? )word(?s)", "cong(?s)",
+                    "*siss(?y|ies|s)*", "hard(?s)r", "*kanker(?s)*", "*lesbo(?s)*", "chong(?s)", "*cotton(? )picker*",
+                    "ninja(? )emoji", "ng(? )emoji"
+                ],
                 message: "This word has been blocked",
                 bypass: ""
             },
+            {
+                name: "Sexually Explicit",
+                severity: "High",
+                words: ["*(🍆|🍌|🍑|🍇)*", "*(1|2|one|two)(? )cup(?s)(? )(1|2|one|two)(? )(boy|girl|man|woman|guy|gal|dude|chick)*",
+                    "*(1|2|one|two)(? )(boy|girl|man|woman|guy|gal|dude|chick)(?s)(? )(1|2|one|two)(? )cup*", "*(1|2|one|two)(? )c(?s)(? )(1|2|one|two)(? )g*",
+                    "*(1|2|one|two)(? )g(?s)(? )(1|2|one|two)(? )c*", "anal(?s)", "anus(?es)", "ass(?es)", "*philia*", "*alabama(? )hot(? )pocket*",
+                    "*alaskan(? )pipeline*", "*anilingus*", "*erotic*", "*b(a|e)b(y|e)(? )(land|batter|beater|juice|water|liquid)*",
+                    "*(ball)(?s)(? )(gag|gravy|kick|lick|sack|suck)(?ing|er)*", "bang", "*bareback*", "*barely(? )legal*", "naked(?)(!eye)", 
+                    "nud(e|it|iti)(?i|s|ie|ies|y)(?i|t|e|y)(?s|y)(?s|ie|ies)",  "bbw", "*bdsm*", "*big(? )knocker*", "bimb(?s)", "*bird(? )lock*", 
+                    "*(action|blonde|brunette)(? )(?on)(? )(action|blonde|brunette)*", "*blow(? )(?your)(? )(job|load)*", "*blue(? )waffle*", "*blumpkin*", 
+                    "*bondag*", "*boner*", "*boob*", "*booty*", "breast(?s)(? )(!cancer)", "*(golden|yellow|brown)(? )shower*", "*bukkake*", "*bullet vibe*",
+                    "*busty*", "*butt*", "*(cam|camera)(? )(boy|girl|man|woman|guy|gal|dude|chick)(?s)*", "*camel(? )toe*", "*carpet(? )muncher*", 
+                    "*chocolate(? )rose*", "*circle(? )jerk*", "*clit*", "*clover(? )clamp*", "*cluster(? )fuck*", "*coprolagnia*", 
+                    "*corn(? )hole*", "*cream(? )pie*", "*cunnilingus*", "*deep(? )throat*", "*dildo*", "*dirty(? )sanchez*", "*dog(?g|i|y)(?y|i|e|ie)(?s)(? )style*", 
+                    "*dolcett*", "*dominatrix*", "*dommes*", "*double(? )dong*", "*double(? )penetration*", "*dp(? )action*", "*dry(? )hump*", "*dvda*", 
+                    "*ejaculation*", "erect*", "*eroti*", "*fellatio*", "*feltch*", "*squirting*", "*f(e|r)mbo(y|i)*", "*femdom*", "*fetish*", "*figging*", 
+                    "*fingerbang*", "*fingered*", "*fingeri*", "*fleshlight*", "*(foot|hand)(? )job*", "*(3|4|5|6|7|8|9|three|four|five|six|seven|eight|nine)some*",
+                    "*frotting*", "*fudge(? )packer*", "*fudgepacker*", "*futanari*", "*g(? )spot*", "*genitals*", "*cock*",
+                    "*(boy|girl|man|woman|guy|gal|dude|chick)(?s)(? )on(? )(top|bottom)*", "*(boy|girl|man|woman|guy|gal|dude|chick)(?s)(? )gone(? )wild*", "*goatse*",
+                    "*gokkun*", "*goo(? )girl*", "*or(?e)gasm*", "*grope*", "*sex(!uality|ualities)*", "guro", 
+                    "*henta*", "*hooker*", "*horn(i|y)*", "*hot(? )(carl|boy|girl|man|woman|guy|gal|dude|chick)*", "humpin(?g)", "*incest*", "*intercourse*", 
+                    "*j(ac|er)(?k)(?in|ing)(? )off*", "*j(ac|er)(?k)(? )mate*", "*jail(? )bait*", "jelly(? )donut(!s)", "*jerk*", "*jizz*", "*juggs*", "*kink*",
+                    "*leather(? )(straight|restraint)(? )jacket*", "*lemon(? )party*", "*lewd*", "*loli(!pop)(?t|a|ta)*", "*love(? )making*", "*lust*",
+                    "cum(?m)(?ing|ed)(?s)", "*puss(y|ies)*", "*mastu*", "*menage(? )a(? )trois*", "*(m|d|f)ilf*", "*missionary*", "*(mound|venus)(? )of(? )(mound|venus)*",
+                    "*muff(? )div(?er|ing)*", "(?deeez|deez|dez|dz)(? )nut(?s)", "nipp(el|le)(?s)", "*nymphomania*", "*omorashi*", "*only(? )fan*",
+                    "org(y|ies)", "*phile*", "*peg(?g|s)(?ing|s)*", "*pek(? )pek*", "*pleasure(? )chest*", "*poop(? )chute*", "*po(?u)rn*", 
+                    "*prince(? )albert(? )piercing*", "*prosti*", "*pubes*", "*public(? )hair*", "*punany*", "*que(a|e)f*", "*rim(? )job*", 
+                    "*rimm(ed|ing)*", "*ros(e|y)(? )(toy|palm)*", "*r(?ule)(? )34*", "*rusty(? )trombone*", "s(&|and)m(?s)", 
+                    "*sadism*", "*scat*", "*schlong*", "*scissor(ing|ed)*", "semen(?s)", "*shave(?d)(? )beaver*", "*shibari*", "*shota*", "*shrimp(ed|ing)*", "*skeet*", 
+                    "*smash*", "*s(l|m)ut*", "*snowballin*", "*sodom(y|ize)*", "*spread(? )legs*", "*spunk*", "*strap(? )(on|pad)(?o)*",
+                    "*strip*", "*swinger*", "*tainted(? )love*", "*taste(? )my(? )teabag*", 
+                    "*tea(? )bagging*", "*tight(? )white*", "*tongue(? )in*", "*topless*", "*tribadism*", "*tub(? )(boy|girl|man|woman|guy|gal|dude|chick)*",
+                    "*tushy*", "*up(? )skirt*", "*urethra*", "*vagina*", "*viagra*", "*vibrator*", "*violet(? )wand*", "*voy(e|u)(e|u)r*", 
+                    "*vulva*", "*wank*", "*wet(? )dream*", "*wrapping(? )(boy|girl|man|woman|guy|gal|dude|chick)*", "*wrinkled(? )starfish*", "xxx",
+                    "*yaoi*", "*yarichin*", "ybc", "*yuri*", "*zoophi*", "*(cnut|thot)*", "*darkie*", "*whor(?e)*", "ho(?e)(?s)","*honkey*", "*jig(g|a)(?g|a)*",
+                    "*goon*", "*(father|mother)(? )f*", "*tosser*", "*twat*", "(go|to)(? )fuck", "(eat|suck)(? )(ass|butt)", "*sybau*",
+                    "*twink*", "*molest*", "*hose(? )mad*", "c(o|u)m(?s|shot)(?s)", "*fmby*", "*ambatukam*", "*عبيد*", "smd(?s)", 
+                    "*touch(? )you*", "fap(?p)(?ing|ed)(?s)", "ph", "*kurwa*", "*hot(? )18*", "*hot(? )(teen|10|ten)*", "*t3(?3)n*",
+                    "*honker(?s)*", "*ti(t|d)(?d)(?y)(?s)*", "*submissive*", "*fucker*", "*seduce*", 
+                    "*sle(pt|ep|eping)(? )with*", "*p(e|d)(do|file)*", "ped", "*f(?u)(?c)k(? )of(?f)*", 
+                    "*sausag*", "sek(?s)", "*wanna(?s)have(?s)(6|six)*", "*want(?s)(?to)(?s)have(?s)(6|six)*", 
+                    "*(see|sea)(?s)you(?s)(4|four|for|fr)(?s)(6|six)*",
+                    "*penile*", "*grape(?s|ed)(you|him|them|her)*", "(his|my|your)(?s)(d|c)", "*ngentott*", "v(?a|er)gin(?s)", "*penetration*", 
+                    "*anilingus*", "*bellend*", "prn, *eggplant(? )emoji*", "*banana(? )emoji*", "*peach(? )emoji*", "*grape(? )emoji*",
+                    "*foreskin*", "*slave*", "*moan*", "*pant(y|ies)*", "kbs", "*chesh*", "h(? )anime", 
+                    "cox(?x), *gyat(?t)*", "*uterus*", "*asswipes*", "*twin(?u)k*", 
+                    "(you|youre|he|she|they)(? )(?is|are)(? )(?a)(? )knob", "*genita*", "*wel(? )cu(?m)*", "*feet(? )pic*", "*condom*", "*dadd(y|ie)*", 
+                    "sma(?s)", "dih(?h)", "*mfker*", "f(?u)(?c)k(? )(me|you|him|her|them|us|all)", "*penis*", "*dick*", "*cock*", "ra(?y)pe"
+                ],
+                message: "This word has been blocked",
+                bypass: ""
+            },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             {
                 name: "Profanity",
                 severity: "Low",
@@ -168,9 +240,12 @@
             }
         ];
 
-        // Obfuscation mapping for each character:
-        // Allows matching variations of letters using Unicode, homoglyphs, or common substitutions
-        const obfuscation_map = {
+    for (const filter of filters) {
+        const key = filter.name.toLowerCase().replace(/\s+/g, "_");
+        automod.filters[key] = filter;
+    }
+
+     const obfuscation_map = {
             // This object maps standard characters to regex character classes of obfuscated versions
             a: "[aA4@ÁÀÂÄÃÅĀĂĄαΔΛД∆𝒶𝔞𝕒𝖆𝘢𝘼𝗮𝙖𝚊Ⓐⓐ🅐🄰𝐚𝖺ᵃₐ𝛂𝛼🇦]",
             b: "[bB8ß฿βБ𝒷𝔟𝕓𝖇𝘣𝘽𝗯𝙗𝚋Ⓑⓑ🅑🄱𝐛ᵇ𝛃𝛽🇧]",
@@ -186,7 +261,7 @@
             l: "[lL1|£łĿĹĻĽ⅃∣𝓁𝔩𝕝𝖑𝘭𝙇𝗹𝙡𝚕Ⓛⓛ🅛🄻𝐥ˡₗ🇱]",
             m: "[mM₥µмṃṁмм𝓂𝔪𝕞𝖒𝘮𝙈𝗺𝙢𝚖Ⓜⓜ🅜🄼𝐦ᵐₘ🇲]",
             n: "[nNñńņňŉηпПИИ∏𝓃𝔫𝕟𝖓𝘯𝙉𝗻𝙣𝚗Ⓝⓝ🅝🄽𝐧ⁿₙ🇳]",
-            o: "[oO0°øõöôóòœōΘФ¤◎𝓸𝔬𝕠𝖔𝘰𝙊𝗼𝙤𝚘Ⓞⓞ🅞🄾𝐨ᵒₒ🇴]",
+            o: "[oO0°øõöôóòœōΘФ¤◎𝓸𝔬𝕠𝖔𝘰𝙊𝗼𝙤𝚘Ⓞⓞ🅞🄾𝐨ᵒₒ🇴ꚙ]",
             p: "[pPþρрҏ₱¶℗℘𝓅𝔭𝕡𝖕𝘱𝙋𝗽𝙥𝚙Ⓟⓟ🅟🄿𝐩ᵖₚ🇵]",
             q: "[qQ9ǫզԛɋʠ𝓆𝔮𝕢𝖖𝘲𝙌𝗾𝙦𝚚Ⓠⓠ🅠🅀𝐪🇶]",
             r: "[rR®řŗгѓґяЯ𝓇𝔯𝕣𝖗𝘳𝙍𝗿𝙧𝚛Ⓡⓡ🅡🅁𝐫ʳ🇷]",
@@ -206,245 +281,239 @@
             "(", ")", "[", "]", "{", "}", "<", ">", "@", "#", "!", "$", "%", "?", "\n", "\r",
             "\u200b", "\u200c", "\u200d", "\u2060"
         ];
+        
+    function escapeRegex(s) {
+        return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
 
-        // Escape regex-special characters in literal text
-        function escapeRegex(s) {
-            return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        }
+    // Updated buildWordRegex: supports exceptions with separators allowed after base word
+    function buildWordRegex(word) {
+          const sepClass = `[${escapeRegex(separators.join(''))}]*`;
 
-        // Build a full regex pattern from a potentially wildcarded and obfuscated keyword
-        function buildWordRegex(word) {
-            const prefixWildcard = word.startsWith("*");
-            const suffixWildcard = word.endsWith("*");
-            const baseWord = word.replace(/^\*|\*$/g, "").toLowerCase();
+    const prefixWildcard = word.startsWith("*");
+    const suffixWildcard = word.endsWith("*");
 
-            let pattern = "";
-            let i = 0;
+    let baseWord = word.replace(/^\*|\*$/g, "").toLowerCase();
 
-            while (i < baseWord.length) {
-                const ch = baseWord[i];
+    // Handle multiple exceptions separated by |
+    const exceptionRegex = /\(!([^)]+)\)/g;
+    let exceptions = [];
+    baseWord = baseWord.replace(exceptionRegex, (match, excGroup) => {
+        exceptions.push(...excGroup.split('|'));
+        return "";
+    });
 
-                // Handle optional single char or optional group
-                if (ch === '(' && baseWord[i + 1] === '?') {
-                    i += 2; // skip "(?"
-                    let group = "";
-                    let depth = 1;
-                    while (i < baseWord.length && depth > 0) {
-                        const c = baseWord[i];
-                        if (c === '(') depth++;
-                        if (c === ')') depth--;
-                        if (depth > 0) group += c;
-                        i++;
-                    }
+    // Build main pattern
+    let pattern = "";
+    let i = 0;
+    while (i < baseWord.length) {
+        const ch = baseWord[i];
 
-                    if (group.includes('|')) {
-                        // Optional group (a|b|c)
-                        const options = group.split('|').map(opt => {
-                            return opt
-                                .split('')
-                                .map(c => obfuscation_map[c] || escapeRegex(c))
-                                .join(`[${escapeRegex(separators.join(""))}]*`);
-                        });
-                        pattern += `(?:${options.join('|')})?`;
-                    } else {
-                        // Optional single character (?x)
-                        const charPattern = obfuscation_map[group] || escapeRegex(group);
-                        pattern += `(?:${charPattern}[${escapeRegex(separators.join(""))}]*)?`;
-                    }
-                }
-
-                // Handle required group (a|b)
-                else if (ch === '(') {
-                    let group = "";
-                    let depth = 1;
-                    i++; // skip '('
-                    while (i < baseWord.length && depth > 0) {
-                        const c = baseWord[i];
-                        if (c === '(') depth++;
-                        if (c === ')') depth--;
-                        if (depth > 0) group += c;
-                        i++;
-                    }
-
-                    const options = group.split('|').map(opt => {
-                        return opt
-                            .split('')
-                            .map(c => obfuscation_map[c] || escapeRegex(c))
-                            .join(`[${escapeRegex(separators.join(""))}]*`);
-                    });
-
-                    // Add separators *before* and *after* the group as well:
-                    pattern += `[${escapeRegex(separators.join(""))}]*` + `(?:${options.join('|')})` + `[${escapeRegex(separators.join(""))}]*`;
-                }
-
-                // Regular character
-                else {
-                    const charPattern = obfuscation_map[ch] || escapeRegex(ch);
-                    pattern += charPattern;
-                    if (i < baseWord.length - 1) {
-                        pattern += `[${escapeRegex(separators.join(""))}]*`;
-                    }
-                    i++;
-                }
+        // Handle optional group (e.g., (?...))
+        if (ch === '(' && baseWord[i + 1] === '?') {
+            i += 2;
+            let group = "";
+            let depth = 1;
+            while (i < baseWord.length && depth > 0) {
+                const c = baseWord[i];
+                if (c === '(') depth++;
+                else if (c === ')') depth--;
+                if (depth > 0) group += c;
+                i++;
             }
 
-            // Apply wildcard matching
-            if (prefixWildcard && suffixWildcard) {
-                pattern = `(?<!\\S)\\S*${pattern}\\S*(?!\\S)`;
-            } else if (prefixWildcard) {
-                pattern = `(?<!\\S)\\S*${pattern}(?!\\S)`;
-            } else if (suffixWildcard) {
-                // Here is the important change:
-                const sepClass = `[${escapeRegex(separators.join(''))}]*`;
-                pattern = `(?<!\\S)${sepClass}${pattern}${sepClass}(?!\\S)`;
+            if (group.includes('|')) {
+                const options = group.split('|').map(opt =>
+                    opt.split('').map(c => obfuscation_map[c] || escapeRegex(c)).join(sepClass)
+                );
+                pattern += `(?:${options.join('|')})?`;
             } else {
-                // Also here:
-                const sepClass = `[${escapeRegex(separators.join(''))}]*`;
-                pattern = `(?<!\\S)${sepClass}${pattern}${sepClass}(?!\\S)`;
+                const charPattern = obfuscation_map[group] || escapeRegex(group);
+                pattern += `(?:${charPattern}${sepClass})?`;
             }
 
-            return new RegExp(pattern, "i");
+        // Handle alternatives (e.g., (ual|lex))
+        } else if (ch === '(') {
+            let group = "";
+            let depth = 1;
+            i++;
+            while (i < baseWord.length && depth > 0) {
+                const c = baseWord[i];
+                if (c === '(') depth++;
+                else if (c === ')') depth--;
+                if (depth > 0) group += c;
+                i++;
+            }
+
+            const options = group.split('|').map(opt =>
+                opt.split('').map(c => obfuscation_map[c] || escapeRegex(c)).join(sepClass)
+            );
+            pattern += sepClass + `(?:${options.join('|')})` + sepClass;
+
+        } else {
+            const charPattern = obfuscation_map[ch] || escapeRegex(ch);
+            pattern += charPattern;
+            if (i < baseWord.length - 1) {
+                pattern += sepClass;
+            }
+            i++;
         }
+    }
 
-        function highlight(text, regex) {
-            const sepPattern = separators.map(s => `\\${s}`).join('');
-            const sepRegex = new RegExp(`^[${sepPattern}]+|[${sepPattern}]+$`, 'g');
+    // Negative lookahead for exceptions
+    let negativeLookaheads = "";
+    for (const exc of exceptions) {
+        const excPattern = exc.split('').map(c => escapeRegex(c)).join(sepClass);
+        negativeLookaheads += `(?!${sepClass}${excPattern})`;
+    }
 
-            return text.replace(regex, match => {
-                const parts = [];
-                let remaining = match;
-                let leading = '', trailing = '';
+    // Final pattern with word boundaries and wildcards
+    if (prefixWildcard && suffixWildcard) {
+        pattern = `(?<!\\S)\\S*${pattern}${negativeLookaheads}\\S*(?!\\S)`;
+    } else if (prefixWildcard) {
+        pattern = `(?<!\\S)\\S*${pattern}${negativeLookaheads}(?!\\S)`;
+    } else if (suffixWildcard) {
+        pattern = `(?<!\\S)${sepClass}${pattern}${negativeLookaheads}${sepClass}(?!\\S)`;
+    } else {
+        pattern = `(?<!\\S)${sepClass}${pattern}${negativeLookaheads}${sepClass}(?!\\S)`;
+    }
 
-                const leadingMatch = remaining.match(new RegExp(`^[${sepPattern}]+`));
-                if (leadingMatch) {
-                    leading = leadingMatch[0];
-                    remaining = remaining.slice(leading.length);
+    return new RegExp(pattern, "i");
+}
+
+// Utility function to safely escape regex characters
+function escapeRegex(text) {
+    return text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+}
+
+    function highlight(text, regex) {
+        const sepPattern = separators.map(s => `\\${s}`).join('');
+        return text.replace(regex, match => {
+            // Strip separators around match to highlight only the core word
+            let leading = '', trailing = '', core = match;
+
+            const leadingMatch = core.match(new RegExp(`^[${sepPattern}]+`));
+            if (leadingMatch) {
+                leading = leadingMatch[0];
+                core = core.slice(leading.length);
+            }
+
+            const trailingMatch = core.match(new RegExp(`[${sepPattern}]+$`));
+            if (trailingMatch) {
+                trailing = trailingMatch[0];
+                core = core.slice(0, -trailing.length);
+            }
+
+            return `${leading}<mark>${core}</mark>${trailing}`;
+        });
+    }
+
+    const inputBox = document.getElementById("inputBox");
+    const output = document.getElementById("output");
+    const username = "Username";
+    const handle = "@username";
+    const checkExtras = true;
+
+    inputBox.addEventListener("input", () => {
+        const val = inputBox.value;
+        const extraText = checkExtras ? `${username} ${handle}` : "";
+
+        let highlightText = val;
+        let highlightUsername = username;
+        let highlightHandle = handle;
+        let blocked = false;
+        let reason = null;
+        let source = "";
+        let matchedWord = "";
+
+        const matches = [];
+
+        // Check username and handle first
+        for (const key in automod.filters) {
+            const filter = automod.filters[key];
+            for (const word of filter.words) {
+                const regex = buildWordRegex(word);
+
+                if (checkExtras && regex.test(username)) {
+                    blocked = filter.bypass !== "AvatarKage";
+                    reason = filter;
+                    matchedWord = word;
+                    source = "Username";
+                    highlightUsername = highlight(username, regex);
+                    break;
                 }
 
-                const trailingMatch = remaining.match(new RegExp(`[${sepPattern}]+$`));
-                if (trailingMatch) {
-                    trailing = trailingMatch[0];
-                    remaining = remaining.slice(0, -trailing.length);
+                if (checkExtras && regex.test(handle)) {
+                    blocked = filter.bypass !== "AvatarKage";
+                    reason = filter;
+                    matchedWord = word;
+                    source = "Handle";
+                    highlightHandle = highlight(handle, regex);
+                    break;
                 }
-
-                return `${leading}<mark>${remaining}</mark>${trailing}`;
-            });
+            }
+            if (blocked) break;
         }
 
-        // DOM references
-        const inputBox = document.getElementById("inputBox");
-        const output = document.getElementById("output");
-        const username = "Username";
-        const handle = "@username";
-        const checkExtras = true; // Set to false to ignore username/handle in checks
-
-        // Event listener for real-time filtering
-        inputBox.addEventListener("input", () => {
-            const val = inputBox.value;
-            const extraText = checkExtras ? `${username} ${handle}` : "";
-
-            let highlightText = val;
-            let highlightUsername = username;
-            let highlightHandle = handle;
-            let blocked = false;
-            let reason = null;
-            let source = "";
-            let matchedWord = "";
-
-            const matches = [];
-
-            // First, check profile data (username and handle)
-            for (const filter of filters) {
+        if (!blocked) {
+            for (const key in automod.filters) {
+                const filter = automod.filters[key];
                 for (const word of filter.words) {
                     const regex = buildWordRegex(word);
-
-                    if (checkExtras && regex.test(username)) {
-                        blocked = filter.bypass !== "AvatarKage";
-                        reason = filter;
-                        matchedWord = word;
-                        source = "Username";
-                        highlightUsername = highlight(username, regex);
-                        break;
+                    if (regex.test(val)) {
+                        matches.push({ regex, word, filter });
                     }
-
-                    if (checkExtras && regex.test(handle)) {
-                        blocked = filter.bypass !== "AvatarKage";
-                        reason = filter;
-                        matchedWord = word;
-                        source = "Handle";
-                        highlightHandle = highlight(handle, regex);
-                        break;
-                    }
-                }
-                if (blocked) break;
-            }
-
-            // If username/handle clean, scan the input field for ALL matches
-            if (!blocked) {
-                for (const filter of filters) {
-                    for (const word of filter.words) {
-                        const regex = buildWordRegex(word);
-                        if (regex.test(val)) {
-                            matches.push({ regex, word, filter });
-                        }
-                    }
-                }
-
-                if (matches.length > 0) {
-                    blocked = matches[0].filter.bypass !== "AvatarKage";
-                    reason = matches[0].filter;
-                    matchedWord = matches[0].word;
-                    source = "Message";
-
-                    // Highlight ONLY the first matched word in the input
-                    const { regex } = matches[0];
-                    highlightText = highlight(highlightText, regex);
-
-                    // Highlight ALL matched words in the input
-                    //for (const { regex } of matches) {
-                    //    highlightText = highlight(highlightText, regex);
-                    //}
                 }
             }
 
-            if (blocked) {
-                let flaggedText;
+            if (matches.length > 0) {
+                blocked = matches[0].filter.bypass !== "AvatarKage";
+                reason = matches[0].filter;
+                matchedWord = matches[0].word;
+                source = "Message";
 
-                if (source === "Username") {
-                    const regex = buildWordRegex(matchedWord);
-                    flaggedText = highlightUsername.replace(regex, match => `<mark>${match}</mark>`);
-                } else if (source === "Handle") {
-                    const regex = buildWordRegex(matchedWord);
-                    flaggedText = highlightHandle.replace(regex, match => `<mark>${match}</mark>`);
-                } else {
-                    flaggedText = highlightText.replace(/\n/g, '<br>');
-                }
+                const { regex } = matches[0];
+                highlightText = highlight(highlightText, regex);
+            }
+        }
 
-                output.innerHTML = `
-                    <div class="box_inner" style="position: relative;">
-                        <img src="logo.png" width="16px" style="position: absolute; top: 16px; right: 16px;">
-                        <div style="display: flex; margin-bottom: 16px;">
-                            <div style="font-size: 16px; display: flex; align-items: center; text-align: left;">
-                                <img width="32px" style="border-radius: 32px; margin-right: 8px;" src="pfp.png">
-                                <div style="display: flex; flex-direction: column; line-height: 1.2;">
-                                    <span><b>${source === "Username" ? flaggedText : username}</b></span>
-                                    <span style="font-size: 12px; opacity: 0.65;">${source === "Handle" ? flaggedText : handle}</span>
-                                </div>
+        if (blocked) {
+            let flaggedText;
+            if (source === "Username") {
+                const regex = buildWordRegex(matchedWord);
+                flaggedText = highlightUsername.replace(regex, match => `<mark>${match}</mark>`);
+            } else if (source === "Handle") {
+                const regex = buildWordRegex(matchedWord);
+                flaggedText = highlightHandle.replace(regex, match => `<mark>${match}</mark>`);
+            } else {
+                flaggedText = highlightText.replace(/\n/g, '<br>');
+            }
+            output.innerHTML = `
+                <div class="box_inner" style="position: relative;">
+                    <img src="logo.png" width="16px" style="position: absolute; top: 16px; right: 16px;">
+                    <div style="display: flex; margin-bottom: 16px;">
+                        <div style="font-size: 16px; display: flex; align-items: center; text-align: left;">
+                            <img width="32px" style="border-radius: 32px; margin-right: 8px;" src="pfp.png">
+                            <div style="display: flex; flex-direction: column; line-height: 1.2;">
+                                <span><b>${source === "Username" ? flaggedText : username}</b></span>
+                                <span style="font-size: 12px; opacity: 0.65;">${source === "Handle" ? flaggedText : handle}</span>
                             </div>
                         </div>
-                        <div style="display: flex; align-items: flex-start; font-size: 14px; margin-bottom: 16px; text-align: left;">
-                            <span class="vr"></span><div style="flex: 1;">${highlightText.replace(/\n/g, '<br>')}</div>
-                        </div>
-                        <div style="font-size: 10px; text-align: left; opacity: 0.65;">
-                            <b>Keyword: </b>${matchedWord} • <b>Filter: </b>${reason.name} (${reason.severity} Priority) • <b>Source: </b>${source}
-                            <br><b>Message: </b>${reason.message}
-                        </div>
                     </div>
-                `;
-            } else {
-                output.innerHTML = "";
-            }
-        });
-    </script>
+                    <div style="display: flex; align-items: flex-start; font-size: 14px; margin-bottom: 16px; text-align: left;">
+                        <span class="vr"></span><div style="flex: 1;">${highlightText.replace(/\n/g, '<br>')}</div>
+                    </div>
+                    <div style="font-size: 10px; text-align: left; opacity: 0.65;">
+                        <b>Keyword: </b>${matchedWord} • <b>Filter: </b>${reason.name} (${reason.severity} Priority) • <b>Source: </b>${source}
+                        <br><b>Message: </b>${reason.message}
+                    </div>
+                </div>
+            `;
+        } else {
+            output.innerHTML = "";
+        }
+    });
+</script>
+
 </body>
 </html>
