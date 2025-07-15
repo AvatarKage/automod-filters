@@ -124,6 +124,731 @@
 </div>
 
 <script>
+    // ————————————————————————————————————————————————————————————————
+// ————————————————————————————— INFO —————————————————————————————
+// ————————————————————————————————————————————————————————————————
+// This is the AutoMod API script. It operates by removing common
+// non-alphanumeric characters then using an advanced obfuscation
+// map to turn the special characters back into alphanumeric 
+// characters. Using special formatting rules within the filters
+// blacklists and whitelists, they are converted into a javascript
+// regex which attempts to match a word within the sent text. It
+// even uses an additional space-based regex to maintain authentic
+// spaces but block bypassing ones.
+
+
+// ————————————————————————————————————————————————————————————————
+// ————————————————————————— CONTRIBUTORS —————————————————————————
+// ————————————————————————————————————————————————————————————————
+// Lead Developer: 
+// - AvatarKage (https://avatarkage.com)
+
+
+// ————————————————————————————————————————————————————————————————
+// ———————————————————— FILTERS CONFIGURATION —————————————————————
+// ————————————————————————————————————————————————————————————————
+// Creates a global object then assigns the filters to it. To
+// create your own filter, either add a new one below or anywhere
+// else within your code before the calling of "AutoMod("text")".
+//
+// FILTER TEMPLATE AND RULES BELOW; UNCOMMENT TEMPLATE TO USE
+//
+// - "*YOUR_WORD" Makes the word catch anything before it from the last space
+// - "YOUR_WORD*" Makes the word catch anything after it until the next space
+// - "*YOUR_WORD*" Makes the word catch anything before and after it from the last space to the next space
+// - "(?YOUR_CHARACTER)" Makes an optional statement where the letter forms a match whether inputted or not
+// - "(YOUR_CHARACTER|YOUR_CHARACTER)" Makes a or statement where either letter are a match
+// - "(?YOUR_CHARACTER|YOUR_CHARACTER)" Makes an optional or statement where either LETTER form a match whether inputted or not
+// - "r:YOUR_REGEX" Enables the use of native JavaScript regex for this specific word entry; not compatible with the above rules
+//
+// automod.filters.YOUR_FILTER_ID = {
+//     name: "", // How the filter will be recognized and friendly identified
+//     group: "", // Useful for taking the same type of action or sending notifications for similar filters
+//     severity: "", // "none", "low", "medium", "high", "critical"; same as the group comment
+//     blacklist: [], // These words will be blocked when matched; refer to the rules guide
+//     whitelist: [], // These words will be allowed and will override the blacklist when matched; refer to the rules guide
+//     message: "", // The return warning to the user who attempted breach
+//     bypass: false, // When true, the filter will be locally disabled via requests; eg: automod.filters.YOUR_FILTER_ID.bypass = (req.permissions == 8)
+//     active: true // When false, the filter will be globally disabled
+// };
+//
+// Note: You can edit any part of your or pre-defined filters anywhere using the following lines of code:
+//
+// - automod.filters.YOUR_FILTER_ID.KEY = ""; KEY is one of the following: "name", "group", "severity", "message", "bypass", "active"
+// - automod.filters.YOUR_FILTER_ID.blacklist.push("YOUR_WORD"); Push a new word into the blacklist or whitelist
+// - automod.filters.YOUR_FILTER_ID.blacklist =
+//       automod.filters.YOUR_FILTER_ID.blacklist.filter(word => word !== "YOUR_WORD"); Remove an existing word from the blacklist or whitelist
+
+// Creates the global object
+var automod = {
+    filters: {}
+};
+
+// Assigns the default discriminatory filter
+automod.filters.discriminatory = 
+    {
+        name: "Discriminatory",
+        group: "Unsafe Expressions",
+        severity: "high",
+        blacklist: ["*(🥷|🆖)*", "(?g)ga", "*n(i|e)g(a|g|h)(h|r|e|a)(?a|r)(?rs|s)*", "ig(?g)(r|e|a)(?a)(?rs|r|s)", "neg(?g)a(?r)(?s)", "n(?e|i|g)(e|g|h)(a|h|r)(?h)",
+            "ng", "nig(?g|e)(?r)(?s)", "ngg(?e)(?r)", "*f(a|g)(o|g)*", "*ret(a|u)r*", "(ret|tard|turd)(?a|r)(?a|r)(?e)(?d)(?s|es|ies)",
+            "coon(?s)", "*kike*", "yid(?s)", "*chink*", "ching(?s)", "*gook*", "*slopehead*", "jap(?s)",
+            "*china(? )(wo)m(a|e)n*", "*coolie*", "*sambo*", "*tar(? )baby*", "*jemima(?s)*", "*mamm(?y|ies|s)*",
+            "*pick(? )aninn(?y|ies|s)*", "*gay(? )lord(?s)*", "*dyke*", "*she(? )male*", "*trann(?y|ies|s)*",
+            "*transvestite*", "*cripple*", "*white(? )power*", "n(? )word(?s)", "r(? )word(?s)", "cong(?s)",
+            "*siss(?y|ies|s)*", "hard(?s)r", "*kanker(?s)*", "*lesbo(?s)*", "chong(?s)", "*cotton(? )picker*", "tor(i|ie|ies|y)(?s)",
+            "(ninja|ng)(? )(emot|emoj|emote|emotion|emoji)", "mong(?g)(?er|ing)(?s)"
+        ],
+        whitelist: [],
+        message: "Your message contains discriminatory language. Attempting to bypass may result in action taken against your account.",
+        bypass: false,
+        active: true
+    }
+
+// Assigns the default sexually explicit filter
+automod.filters.sexual = 
+    {
+        name: "Sexually Explicit",
+        group: "Unsafe Expressions",
+        severity: "high",
+        blacklist: ["*(🍆|🍌|🍑|🍇)*", "*(1|2|one|two)(? )cup(?s)(? )(1|2|one|two)(? )(boy|girl|man|woman|guy|gal|dude|chick)*",
+            "*(1|2|one|two)(? )(boy|girl|man|woman|guy|gal|dude|chick)(?s)(? )(1|2|one|two)(? )cup*", "*(1|2|one|two)(? )c(?s)(? )(1|2|one|two)(? )g*",
+            "*(1|2|one|two)(? )g(?s)(? )(1|2|one|two)(? )c*", "anal(?s)", "anus(?es)", "ass(?es)", "*philia*", "*alabama(? )hot(? )pocket*",
+            "*alaskan(? )pipeline*", "*anilingus*", "*erotic*", "*b(a|e)b(y|e)(? )(land|batter|beater|juice|water|liquid)*",
+            "*(ball)(?s)(? )(gag|gravy|kick|lick|sack|suck)(?ing|er)*", "baǁs", "bang", "*bareback*", "*barely(? )legal*", "naked", 
+            "nud(e|it|iti)(?i|s|ie|ies|y)(?i|t|e|y)(?s|y)(?s|ie|ies)",  "bbw", "*bdsm*", "*big(? )knocker*", "bimb(?s)", "*bird(? )lock*", 
+            "*(action|blonde|brunette)(? )(?on)(? )(action|blonde|brunette)*", "*blow(? )(?your)(? )(job|load)*", "*blue(? )waffle*", "*blumpkin*", 
+            "*bondag*", "*boner*", "*b(oo|ယ|ꝏ|ꚙ|ထ)b*", "*b(oo|ꚙ|ယ|ꝏ|ထ)ty*", "breast(?s)", "*(golden|yellow|brown)(? )shower*", "*bukkake*", "*bullet vibe*",
+            "*busty*", "*butt*", "*(cam|camera)(? )(boy|girl|man|woman|guy|gal|dude|chick)(?s)*", "*camel(? )toe*", "*carpet(? )muncher*", 
+            "*chocolate(? )rose*", "*circle(? )jerk*", "*clit*", "*clover(? )clamp*", "*cluster(? )fuck*", "*coprolagnia*", 
+            "*corn(? )hole*", "*cream(? )pie*", "*cunnilingus*", "*deep(? )throat*", "*dildo*", "*dirty(? )sanchez*", "*dog(?g|i|y)(?y|i|e|ie)(?s)(? )style*", 
+            "*dolcett*", "*dominatrix*", "*dommes*", "*double(? )dong*", "*double(? )penetration*", "*dp(? )action*", "*dry(? )hump*", "*dvda*", 
+            "*ejaculation*", "erect*", "*eroti*", "*fellatio*", "*feltch*", "*squirting*", "*f(e|r)mbo(y|i)*", "*femdom*", "*fetish*", "*figging*", 
+            "*fingerbang*", "*fingered*", "*fingeri*", "*fleshlight*", "*(foot|hand)(? )job*", "*(3|4|5|6|7|8|9|three|tre|thre|thee|tree|four|five|six|seven|sevn|svn|eight|nine)some*",
+            "*frotting*", "*fudge(? )packer*", "*fudgepacker*", "*futanari*", "*g(? )spot*", "*genitals*", "*cock*",
+            "*(boy|girl|man|woman|guy|gal|dude|chick)(?s)(? )on(? )(top|bottom)*", "*(boy|girl|man|woman|guy|gal|dude|chick)(?s)(? )gone(? )wild*", "*goatse*",
+            "*gokkun*", "*goo(? )girl*", "*or(?e)gasm*", "*grope*", "*(?e)(? )sex*", "guro", 
+            "*henta*", "*hooker*", "*h(?o)rn(i|y)*", "*hot(? )(carl|boy|girl|man|woman|guy|gal|dude|chick)*", "humpin(?g)", "*incest*", "*intercourse*", 
+            "*j(ac|er)(?k)(?in|ing)(? )off*", "*j(ac|er)(?k)(? )mate*", "*jail(? )bait*", "jelly(? )donut", "*jerk*", "*jizz*", "*juggs*", "*kink*",
+            "*leather(? )(straight|restraint)(? )jacket*", "*lemon(? )party*", "*lewd*", "*loli(?t|a|ta)*", "*love(? )making*", "*lust*",
+            "cum(?m|in)(?in|ing|ed)(?s)", "*puss(y|ies)*", "*mastu*", "*menage(? )a(? )trois*", "*(m|d|f)ilf*", "*missionary*", "*(mound|venus)(? )of(? )(mound|venus)*",
+            "*muff(? )div(?er|ing)*", "(?deeez|deez|dez|dz)(? )nut(?s)", "nipp(el|le)(?s)", "*nymphomania*", "*omorashi*", "*only(? )fan*",
+            "org(y|ies)", "*phile*", "*peg(?g|s)(?ing|s)*", "*pek(? )pek*", "*pleasure(? )chest*", "*poop(? )chute*", "*po(?u)rn*", 
+            "*prince(? )albert(? )piercing*", "*prosti*", "*pubes*", "*public(? )hair*", "*punany*", "*que(a|e)f*", "*rim(? )job*", 
+            "*rimm(ed|ing)*", "*ros(e|y)(? )(toy|palm)*", "*r(?ule)(? )34*", "*rusty(? )trombone*", "s(&|and)m(?s)", 
+            "*sadism*", "*scat*", "*schlong*", "*scissor(ing|ed)*", "semen(?s)", "*shave(?d)(? )beaver*", "*shibari*", "*shota*", "*shrimp(ed|ing)*", "*skeet*", 
+            "*smash*", "*s(l|m)ut*", "*snowballin*", "*sodom(y|ize)*", "*spread(? )legs*", "*spunk*", "*strap(? )(on|pad)(?o)*",
+            "*strip*", "*swinger*", "*tainted(? )love*", "*taste(? )my(? )teabag*", 
+            "*tea(? )bagging*", "*tight(? )white*", "*tongue(? )in*", "*topless*", "*tribadism*", "*tub(? )(boy|girl|man|woman|guy|gal|dude|chick)*",
+            "*tushy*", "*up(? )skirt*", "*urethra*", "*vagina*", "*viagra*", "*vibrator*", "*violet(? )wand*", "*voy(e|u)(e|u)r*", 
+            "*vulva*", "*wank*", "*wet(? )dream*", "*wrapping(? )(boy|girl|man|woman|guy|gal|dude|chick)*", "*wrinkled(? )starfish*", "xxx",
+            "*yaoi*", "*yarichin*", "ybc", "*yuri*", "*zoophi*", "*c(n|u|v)(n|u)t*", "*thot*", "*darkie*", "*whor(?e)*", "ho(?e)(?s)","*honkey*", "*jig(g|a)(?g|a)*",
+            "*goon*", "*(father|mother)(? )f*", "*tosser*", "*twat*", "(go|to)(? )fuck", "(eat|suck)(? )(ass|butt)", "*sybau*",
+            "*twink*", "*molest*", "*hose(? )mad*", "c(o|u)m(?s|shot)(?s)", "*fmby*", "*ambatukam*", "*عبيد*", "smd(?s)", 
+            "*touch(? )you*", "fap(?p)(?ing|ed)(?s)", "ph", "*kurwa*", "*hot(? )18*", "*hot(? )(teen|10|ten)*", "*t3(?3)n*",
+            "*honker(?s)*", "*ti(t|d)(?d)(?y)(?s)*", "*submissive*", "*fucker*", "*seduce*", 
+            "*sle(pt|ep|eping)(? )with*", "*p(e|d)(do|file)*", "ped", "*f(?u)(?c)k(? )of(?f)*", 
+            "*sausag*", "sek(?s)", "*wanna(?s)have(?s)(6|six)*", "*want(?s)(?to)(?s)have(?s)(6|six)*", 
+            "*(see|sea)(?s)you(?s)(4|four|for|fr)(?s)(6|six)*",
+            "*penile*", "*grape(?s|ed)(you|him|them|her)*", "(his|my|your)(?s)(d|c|k)", "*ngentott*", "v(?a|er)gin(?s)", "*penetration*", 
+            "*anilingus*", "*bellend*", "prn, *eggplant(? )(emot|emoj|emote|emotion|emoji)*", "*banana(? )(emot|emoj|emote|emotion|emoji)*", "*peach(? )(emot|emoj|emote|emotion|emoji)*", "*grape(? )(emot|emoj|emote|emotion|emoji)*",
+            "*foreskin*", "*slave*", "*moan*", "*pant(y|ies)*", "kbs", "*chesh*", "h(? )anime",
+            "cox(?x), *gyat(?t)*", "*uterus*", "*asswipes*", "*twin(?u)k*", 
+            "(you|youre|he|she|they)(? )(?is|are)(? )(?a)(? )knob", "*genita*", "*wel(? )cu(?m)*", "*feet(? )pic*", "*condom*", "*dadd(y|ie)*", 
+            "sma(?s)", "dih(?h)", "*mfker*", "f(?u)(?c)k(? )(me|you|him|her|them|us|all)", "*penis*", "*dick*", "*cock*", "ra(?y)pe"
+        ],
+        whitelist: ["naked(? )eye", "breast(?s)(? )cancer(?s)", "sexualit(y|ies)", "lolipop(?s)"],
+        message: "Your message contains sexually explicit language. Attempting to bypass may result in action taken against your account.",
+        bypass: false,
+        active: true
+    }
+
+// Assigns the default regional filter
+automod.filters.regional = 
+    {
+        name: "Regional",
+        group: "Unsafe Expressions",
+        severity: "medium",
+        blacklist: [
+            "*qaeda*", "*isis*", "*hamas*", "*taliban*", "*boko(? )haram*", "*al(? )shabaab*", "*(osama|laden)*", "*khalifa*", "*jihad*", 
+            "*sharia*", "*caliphate*", "*nambla*", "*martyrdom*", "*hitler*", "*mussolini*", "*naz(i|y)*", "*fascis(m|t)*", "kkk", "*☭*", 
+            "*卍*", "*卐*", "*paki*", "jap(?s)", "*g(? )word*", "*isr(ea|ae)l*", "*palest*", "*gaza*", "*hamas*", "*hezbollah*", "*ukrain*",
+            "*russi*", "*donbas*", "*putin*", "*crimea*", "*taiwan*", "*tibet*", "*hong(? )kong*", "*south(? )china(? )sea*", "*kurd*", 
+            "*pkk*", "*ypg*", "*biden*", "*joe(? )biten*", "*trump*", "maga", "*democ*", "*repub*", "*conservative*", "*liberal*", "bnp", 
+            "*antifa*", "*proud(? )boys*", "*marxist*", "*communist*", "*brexit*", "*alt(? )right*", "*alt(? )left*", "*christ*",
+            "*god*", "*jesus*", "*islam*", "*muslim*", "*allah*", "*yahweh*", "*adonai*", "*jew*", "*jewish*", "*hindu*", "*buddh*", "*atheist*",
+            "*religion*", "*blasphemy*", "*prophet*", "(9 11|9/11)", "*twin(? )towers*", "*pearl(? )harbor*", "*tiananmen*", "*genocide*", "*holocaust*", "*shoah*",
+            "*gulag*", "*nkvd*", "*(atomic|nuclear)*", "doge"
+        ],
+        whitelist: ["doge(? )(meme|dog)"],
+        message: "Your message contains regional and/or controversial language. Attempting to bypass may result in action taken against your account.",
+        bypass: false,
+        active: true
+    }
+
+// Assigns the default profanity filter
+automod.filters.profanity = 
+    {
+        name: "Profanity",
+        group: "Unsafe Expressions",
+        severity: "low",
+        blacklist: [
+            "*🖕*", "*middle(? )finger*", "*b(?i)(?a)(tc|ʨ)h*", "*ar(?r)se(? )hole*", "*as(?s)(? )hole*", 
+            "*basta(?r)(?d)*", "*b(o|u)l(?l)(? )lock*", "*stfu*", "*piss*", "*dumbas(?s)*", "*shit*",
+            "*you(?r)(?e)(? )(?a)(? )birch*", "*bish*", "*fu(?c)(c|k|w|u)*"
+        ],
+        whitelist: [],
+        message: "Your message contains profanital language. Attempting to bypass may result in action taken against your account.",
+        bypass: false,
+        active: true
+    }
+
+// Assigns the default profanity abbreviations filter
+automod.filters.abbreviations = 
+    {
+        name: "Profanity Abbreviations",
+        group: "Unsafe Expressions",
+        severity: "low",
+        blacklist: [
+            "fml", "mf", "(?w)tf", "*my(? )(god|lord)*", "o(m|n)(?f)(g|l)", "ist(g|l)",
+            "lm(?f)(a|b)o", "*🤬*", "*(⛱️|🏖️)*", "(swear|beach|swears|swearing)(? )(emot|emoj|emote|emotion|emoji)", "*f****", "*s****",
+            "(f|s|b)(?)(word)(?s)", "swear(? )(?to)(? )(god|lord)(?s)", "ahh", "*f(?u)(c|k|w|u)*", "(69|420)", "d(a|e)(m|n)(m|n)"
+        ],
+        whitelist: [],
+        message: "Your message contains profanital language. Attempting to bypass may result in action taken against your account.",
+        bypass: false,
+        active: true
+    }
+
+// Assigns the default blockchain filter
+automod.filters.blockchain = 
+    {
+        name: "Blockchain",
+        group: "Security Concern",
+        severity: "medium",
+        blacklist: [
+            "*bitcoin*", "btc", "*ethereum*", "eth", "*binance*", "bnb", "*coinbase*", "*crypto*", "*nft*", "*blockchain*", 
+            "*web(? )(3|three|thre|thee|tree|tre)*", "*metamask*", "*trustwallet*", "*solana*", "sol", "xrp", "ripple", "*cardano*", "ada",
+            "*litecoin*", "ltc", "*dogecoin*", "matic", "*opensea*", "*rarible*", "defi", "*altcoin*", "*yield(? )farming*", "*chainlink*", 
+            "*arbitrum*", "*zkrollup*", "*binance(? )smart(? )chain*", "bsc", "*avax*", "trx", "*uniswap*", "*sushiswap*", "*pancakeswap*", 
+            "*trezor*", "*nano(? )ledger*", "*hardware(? )wallet*"
+        ],
+        whitelist: [],
+        message: "Your message contains blockchain keywords. Attempting to bypass may result in action taken against your account.",
+        bypass: false,
+        active: true
+    }
+
+// Assigns the default illegal filter
+automod.filters.illegal = 
+    {
+        name: "Illegal",
+        group: "Security Concern",
+        severity: "high",
+        blacklist: [
+            "*piratebay*", "*(1|one)(3|three|free|thre|tree)(3|three|free|thre|tree)(7|seven|sevn|svn)x*", 
+            "*rarbg*", "*torrent*", "*yts*", "*yify*", "*eztv*", "*fitgirl*", "*igg(? )game*", "*skidrow*", 
+            "*reloaded*", "*cpy*", "*razor1911*", "*crackwatch*", "*oceanofgame*", "*steamunlock*", "*gamecopyworld*", "*megagame*", 
+            "*myabandonware*", "*apkpure*", "*apkmirror*", "*apkdl*", "*mob(? )org*", "*blackbox(? )repack*", "*dodi(? )repack*", "*nexusmod*", 
+            "*zooqle*", "*bitlord*", "*torlock*", "*torrend*", "*fmovie*", "*putlocker*", "*soap(2|two)day*", "*(1|one)(2|two)(3|three|free|thre|tree)movie*",
+            "*yesmovie*", "*watchserie*", "*gomovie*", "*animeultima*", "*kissanime*", "*(9|nine)anime*", "*aniwatch*", "*watchcartoononline*", 
+            "*watchserieshd*", "*dramacool*", "*bolly(4|four|for)u*", "*filmyzilla*", "*movierulz*", "*tamilrocker*", "*mkvcage*", "*hdpopcorn*", 
+            "*movie(4|four)k*", "*moviesjoy*", "*popcorntime*", "*project(? )free(? )tv*", "*watchfree*", "*sockshare*", "*blackspigot*", 
+            "*temu*", "*yiff*", "*rarbg*", "*repack(? )mechanic*", "*eztv*", "*pirat(?e)(?d)(?ing)(? )(?a)(? )game*", "*cocaine*", "heroi(?n)(?s)", "meth", 
+            "*ecstasy*", "lsd", "*ketamine*", "*mdma*", "*fent(?an)*", "*crack*", "*opium*", "*opiates*", "pcp", "*cannabis*", "*marijuana*", 
+            "weed", "*shroom*", "*psilocybin*", "*xanax*", "*xanny*", "*oxycodone*", "oxy", "*adderall*", "*purple(? )(drink|drank|drunk)*",
+            "dabs", "*dark(web|net)*", "*hydroxybutyrate*", "hemp", "cbd", "*ayahuasca*", "*benzos*", 
+            "*(do|did|grow|sell|sold|on|own)(?ing|ed)(? )(?some)(? )(?thing|think)(? )(drug|drg|drig|dgs|illegal)*", "*tax(? )evasion*", "*tax(? )bail*", 
+            "*shoplift*", "*doxx*", "(drug|drg|drig|dgs)(?s)", "have(? )(?my|self|him|his|her|their|them|she|he|you|your|youre|youre|me|others|someone|anyone|everybody|all)(?s)(? )(ip)",
+            "*(sold|sell|buy|leak|steal|stole|bought|hack)(?ing|ed)(? )(my|self|him|his|her|their|them|she|he|you|your|youre|youre|me|others|someone|anyone|everybody|all|ip|dm|message|email|pm|game|account|film|stuff)*"
+        ],
+        whitelist: ["mushroom"],
+        message: "Your message contains illegal keywords. Attempting to bypass may result in action taken against your account.",
+        bypass: false,
+        active: true
+    }
+
+// Assigns the default physical harm filter
+automod.filters.harm = 
+    {
+        name: "Physical Harm",
+        group: "Security Concern",
+        severity: "high",
+        blacklist: [
+            "*(eat|drink|drnk|dnk|drunk|swallow|swlo|swllo|swllw|swllow|swollow)(?s|ing|ed)(? )(bleach|blech|blach|chem|poi)*",
+            "*(want|wnt|wih|wish|wsh)(?ed|ing)(? )(i|me)(? )(?am|to|was|will|were|is|are)(? )(die|di|ded|dea|death|deth|unali|dead)*", 
+            "*(i|me)(? )(?am|to|was|will|were|is|are)(? )(want|wnt|wih|wish|wsh)(?ed|ing)(? )(die|di|ded|dea|death|deth|unali|dead)*", 
+            "s(? )h", "*(self)(? )(?inflict)(?ed|ing|s)(? )(harm|injur|ijur|muti)*", "*overdos(?e)(?ing|ed)(? )on(? )(pill|alcohol|drug|drg)(?s)*",
+            "*head(? )bang*", "*(die|di|kill|death|dea|deth|ded|unali)(? )(?this)(? )(today|soon|later|tommorrow|week|month|year)*",
+            "*(pill|alcohol|drug|drg)(?s)(? )(abu|abo)*", "*sex(?ual)(? )(assault|attack|abuse|battery)*", "*murderer*", "*mutilation*", 
+            "*starve(? )(myself|me|self)*", "*binge(? )(?and|&|nd)(? )purge*", "*suicid(e|al)*", "*tak(?ing|e)(?ing)(? )(my|me|self)(? )life*", 
+            "*self(? )destructive*", "*should(? )(die|death|deth|ded|unali)*", "*gok(m|y|h|*)s*","*shootup*", "*slit*", "k(m|y|h|*)s",
+            "*end(? )(my|self|him|his|her|their|them|she|he|you|your|youre|youre|me|others|someone|anyone|everybody|all)(? )(life)*",
+            "*(kill|murder|burn|beat|punch|mrdr|pnch|kick|abuse|stab|shoot|hurt)(? )(my|self|him|his|her|their|them|she|he|you|your|youre|youre|me|others|someone|anyone|everybody|all)*",
+        ],
+        whitelist: [],
+        message: `Your message contains physical harm expressions. Attempting to bypass may result in action taken against your account. Know that help is available: <a href="https://suicidepreventionlifeline.org">https://suicidepreventionlifeline.org/</a>`,
+        bypass: false,
+        active: true
+    }
+
+// Assigns the default promotion filter
+automod.filters.promotion = 
+    {
+        name: "Promotion",
+        group: "Security Concern",
+        severity: "medium",
+        blacklist: [
+            "*craigslist*", "*ebay*", "*download*", "*earn(? )($|€|¥|¢)*", "*earn(? )(money|moolah|cash|euro|yen|card|giftcard|credit|credi)(?y|ies|es)*", 
+            "*get launch*", "*hedge(9|nine)(0|zero)*", "*join(? )my(? )(server|discord)*", "*limited(? )(?time)(? )offer*", "*steam(? )nitro*", 
+            "*(free|fre)(? )r(o|u)b(o|u)x*", "*($|€|¥|¢|money|moolah|cash|euro|yen|giftcard|card|credit|credi)(? )gift*", "*get(? )(rich|money|credit|credi|wealthy|$|€|¥|¢|money|moolah|cash|euro|yen|giftcard|card|credit)(? )quick*",
+            "*(free|fre)(? )(account|boost|cash|credit|credi|discord|tag|download|game|giftcard|film|giveaway|money|nitro|paypal|reward|money|moolah|cash|euro|yen|giftcard|card)*",
+            "*(click|pm|dm|message|email)(? )(?me)(? )(?for)(?free|fre)(account|boost|cash|credit|credi|discord|tag|download|game|giftcard|film|giveaway|money|nitro|paypal|reward|money|moolah|cash|euro|yen|giftcard|card)*",
+            "*(please|pls|plz)(? )(sub|subscribe|follow)*"
+        ],
+        whitelist: ["downloading", "downloaded"],
+        message: "Your message contains promotion or scam attempt keywords. Attempting to bypass may result in action taken against your account.",
+        bypass: false,
+        active: true
+    }
+
+// Assigns the default domains filter
+automod.filters.domains = 
+    {
+        name: "Domains",
+        group: "",
+        severity: "low",
+        blacklist: [
+            "r:\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b",
+            "r:[a-z0-9\\-]+(?:\\.[a-z]{2,})+"
+        ],
+        whitelist: [
+            "avatarka(.ge|ge.com)",
+        ],
+        message: "Your message contains unauthorized links. Attempting to bypass may result in action taken against your account.",
+        bypass: false,
+        active: true
+    }
+
+
+// ————————————————————————————————————————————————————————————————
+// —————————————————— OBFUSCATION CONFIGURATION ———————————————————
+// ————————————————————————————————————————————————————————————————
+// Creates the obfuscation object inside the global automod object
+// then assigns the mappings to it. To create your own obfuscation 
+// map or edit an existing one, either add a new one below or
+// anywhere else within your code before  the calling of 
+// "AutoMod("text")".
+//
+// Note: You can edit any part of your or pre-defined obfuscations anywhere using the following lines of code:
+//
+// - automod.obfuscation.YOUR_CHARACTER.push("YOUR_CHARACTER"); Push a new character into the map
+// - automod.obfuscation.YOUR_CHARACTER =
+//       automod.obfuscation.YOUR_CHARACTER.filter(character => character !== "YOUR_CHARACTER"); Remove an existing character from the map
+
+// Creates the obfuscation object
+automod.obfuscation = {};
+
+// Assigns the obfuscation mapping each letter of the alphabet
+automod.obfuscation.a = 
+    [
+        "a", "A", "4", "@", "Á", "À", "Â", "Ä", "Ã", "Å", "Ā", "Ă", "Ą", "α", "Δ", "Λ", "Д", "∆", "𝒶", "𝔞", "𝕒", "𝖆", "𝘢", "𝘼", "𝗮", "𝙖", "𝚊", 
+        "Ⓐ", "ⓐ", "🅐", "🄰", "𝐚", "𝖺", "ᵃ", "ₐ", "𝛂", "𝛼", "🇦", "Ａ", "𝓪", "ꓮ", "а", "ᴀ"
+    ];
+
+automod.obfuscation.b =
+    [
+        "b", "B", "8", "ß", "฿", "β", "Б", "𝒷", "𝔟", "𝕓", "𝖇", "𝘣", "𝘽", "𝗯", "𝙗", "𝚋", "Ⓑ", "ⓑ", "🅑", "🄱", "𝐛", "ᵇ", "𝛃", "𝛽", "🇧", "ɮ", 
+        "乃", "฿", "ｂ", "𐌁", "ᗷ", "ẞ", "₿", "ʙ"
+    ];
+
+automod.obfuscation.c =
+    [
+        "c", "C", "¢", "©", "ç", "Ć", "Č", "Ĉ", "Ċ", "ς", "ʗ", "С", "𐐕", "𝒸", "𝔠", "𝕔", "𝖈", "𝘤", "𝘾", "𝗰", "𝙘", "𝚌", "Ⓒ", "ⓒ", "🅒", "🄲", "𝐜", 
+        "ᶜ", "🇨", "🇨", "ꓚ", "ｃ", "ᴄ", "ᑕ"
+    ];
+
+automod.obfuscation.d =
+    [
+        "d", "D", "Ð", "Ď", "Đ", "Ԁ", "ԁ", "ԃ", "δ", "ȡ", "𝒹", "𝔡", "𝕕", "𝖉", "𝘥", "𝘿", "𝗱", "𝙙", "𝚍", "Ⓓ", "ⓓ", "🅓", "🄳", "𝐝", "ᵈ", "𝛅", 
+        "🇩", "ⅅ", "ｄ", "Ɑ", "ᴅ", "ɖ"
+    ];
+
+automod.obfuscation.e =
+    [
+        "e", "E", "3", "€", "é", "è", "ê", "ë", "ē", "ė", "ę", "Ξ", "Σ", "Ɛ", "𝑒", "𝔢", "𝕖", "𝖊", "𝘦", "𝙀", "𝗲", "𝙚", "𝚎", "Ⓔ", "ⓔ", "🅔", 
+        "🄴", "𝐞", "ᵉ", "ₑ", "🇪", "Ｅ", "ｅ", "ꓰ", "ᴇ", "ǝ", "Э", "ҽ", "ё", "е", "$"
+    ];
+
+automod.obfuscation.f =
+    [
+        "f", "F", "ƒ", "Ғ", "₣", "𝒻", "𝔣", "𝕗", "𝖋", "𝘧", "𝙁", "𝗳", "𝙛", "𝚏", "Ⓕ", "ⓕ", "🅕", "🄵", "𝐟", "ᶠ", "🇫", "ｆ", "ꜰ", "ᖴ"
+    ];
+
+automod.obfuscation.g =
+    [
+        "g", "G", "6", "9", "ĝ", "ğ", "ġ", "ģ", "ɢ", "ǥ", "₲", "𝓰", "𝔤", "𝕘", "𝖌", "𝘨", "𝙂", "𝗴", "𝙜", "𝚐", "Ⓖ", "ⓖ", "🅖", "🄶", "𝐠", "ᵍ", 
+        "🇬", "⅁", "Ɠ", "ɡ", "ꓖ"
+    ];
+
+automod.obfuscation.h =
+    [
+        "h", "H", "ĥ", "ħ", "н", "Ħ", "#", "𝒽", "𝔥", "𝕙", "𝖍", "𝘩", "𝙃", "𝗵", "𝙝", "𝚑", "Ⓗ", "ⓗ", "🅗", "🄷", "𝐡", "ʰ", "ₕ", "🇭", "ｈ", "ʜ", 
+        "ɥ"
+    ];
+
+automod.obfuscation.i =
+    [
+        "i", "I", "1", "!", "í", "ì", "î", "ï", "ī", "į", "ι", "І", "¡", "|", "ǐ", "𝒾", "𝔦", "𝕚", "𝖎", "𝘪", "𝙄", "𝗶", "𝙞", "𝚒", "Ⓘ", "ⓘ", "🅘", 
+        "🄸", "𝐢", "ᶦ", "ᵢ", "🇮", "*", "ｉ", "ɪ", "$", "ǀ"
+    ];
+
+automod.obfuscation.j =
+    [
+        "j", "J", "ĵ", "ʝ", "ј", "Ј", "¿", "ل", "ل", "ʲ", "ɟ", "জ", "ϳ", "𝒿", "𝔧", "𝕛", "𝖏", "𝗷", "𝘫", "𝙟", "𝚓", "Ⓙ", "ⓙ", "🅙", "🄹", "𝐣", "ʲ", 
+        "🇯", "ｊ", "ᴊ"
+    ];
+
+automod.obfuscation.k =
+    [
+        "k", "K", "ĸ", "κ", "ķ", "Ķ", "Ⱪ", "Ҡ", "к", "қ", "ҟ", "Ҡ", "𝓀", "𝔨", "𝕜", "𝖐", "𝗸", "𝘬", "𝙠", "𝚔", "Ⓚ", "ⓚ", "🅚", "🄺", "𝐤", "ᵏ", "ₖ", 
+        "🇰", "ｋ", "ᴋ", "ʞ", "Ꮶ"
+    ];
+
+automod.obfuscation.l =
+    [
+        "l", "L", "1", "|", "£", "ł", "Ŀ", "Ĺ", "Ļ", "Ľ", "ⅼ", "∣", "ا", "ا", "ⅼ", "ʟ", "レ", "Ꮮ", "し", "ال", "𝓁", "𝔩", "𝕝", "𝖑", "𝗹", "𝘭", "𝙡", 
+        "𝚕", "Ⓛ", "ⓛ", "🅛", "🄻", "𝐥", "ˡ", "ₗ", "🇱", "ｌ", "ǁ"
+    ];
+
+automod.obfuscation.m =
+    [
+        "m", "M", "₥", "м", "ṃ", "ṁ", "ϻ", "м", "ო", "๓", "𝓂", "𝔪", "𝕞", "𝖒", "𝘮", "𝙈", "𝗺", "𝙢", "𝚖", "Ⓜ", "ⓜ", "🅜", "🄼", "𝐦", "ᵐ", 
+        "ₘ", "🇲", "ｍ", "ᗰ", "爪", "Ꮇ", "ᴍ", "Μ", "ɯ"
+    ];
+
+automod.obfuscation.n =
+    [
+        "n", "N", "ñ", "ń", "ņ", "ň", "ŉ", "η", "п", "Π", "ղ", "ภ", "ก", "ռ", "ռ", "𝓃", "𝔫", "𝕟", "𝖓", "𝗻", "𝘯", "𝙣", "𝚗", "ⓝ", "Ⓝ", "🄽", 
+        "🅝", "𝐧", "ⁿ", "ₙ", "ռ", "🇳", "ｎ", "ǌ", "И", "ɴ", "Ν", "и", "ꓠ"
+    ];
+
+automod.obfuscation.o =
+    [
+        "o", "O", "0", "°", "ø", "õ", "ö", "ô", "ó", "ò", "œ", "ō", "Θ", "Ф", "¤", "◎", "σ", "𝓸", "ဝ", "ဝ", "𐐬", "𝔬", "𝕠", "𝖔", "𝘰", "𝙊", 
+        "𝗼", "𝙤", "𝚘", "Ⓞ", "ⓞ", "🅞", "🄾", "𝐨", "ᵒ", "ₒ", "🇴", "ꚙ", "ｏ", "ꝏ", "ယ", "๐", "ᴏ", "ထ", "ꓳ"
+    ];
+
+automod.obfuscation.p =
+    [
+        "p", "P", "þ", "ρ", "р", "ҏ", "₱", "¶", "℗", "℘", "ק", "թ", "𝓅", "𝔭", "𝕡", "𝖕", "𝘱", "𝙋", "𝗽", "𝙥", "𝚙", "Ⓟ", "ⓟ", "🅟", "🄿", 
+        "𝐩", "ᵖ", "ₚ", "🇵", "ᴘ"
+    ];
+
+automod.obfuscation.q =
+    [
+        "q", "Q", "9", "ǫ", "զ", "ԛ", "ʠ", "φ", "ɋ", "ʠ", "𝓆", "𝔮", "𝕢", "𝖖", "𝘲", "𝙌", "𝗾", "𝙦", "𝚚", "Ⓠ", "ⓠ", "🅠", "🅀", "𝐪", "🇶"
+    ];
+
+automod.obfuscation.r =
+    [
+        "r", "R", "®", "ř", "ŗ", "г", "ѓ", "ґ", "Ր", "г", "я", "Я", "𝓇", "𝔯", "𝕣", "𝖗", "𝘳", "𝙍", "𝗿", "𝙧", "𝚛", "Ⓡ", "ⓡ", "🅡", "🅁", 
+        "𝐫", "ʳ", "🇷", "ｒ", "ʀ"
+    ];
+
+automod.obfuscation.s =
+    [
+        "s", "S", "5", "$", "§", "š", "ś", "ș", "ѕ", "ꜱ", "ʂ", "ֆ", "ʃ", "ᔕ", "丂", "ร", "ş", "𝓈", "𝔰", "𝕤", "𝖘", "𝘴", "𝙎", "𝘀", "𝚠", "Ⓢ", 
+        "ⓢ", "🅢", "🅂", "𝐬", "ˢ", "ₛ", "🇸", "ｓ", "Ꮥ", "ꕶ"
+    ];
+
+automod.obfuscation.t =
+    [
+        "t", "T", "7", "+", "†", "ţ", "ŧ", "т", "⊤", "𐊗", "𐊣", "⟙", "т", "т", "𝓉", "𝔱", "𝕥", "𝖙", "𝘵", "𝙏", "𝗲", "𝙩", "𝚝", "Ⓣ", "ⓣ", 
+        "🅣", "🅃", "𝐭", "ᵗ", "ₜ", "🇹", "ｔ", "ʨ", "ᴛ", "ʇ"
+    ];
+
+automod.obfuscation.u =
+    [
+        "u", "U", "(", "_", ")", "|", "ü", "û", "ù", "ú", "ū", "ų", "µ", "џ", "ц", "џ", "ʉ", "น", "ሁ", "𝓊", "𝔲", "𝕦", "𝖚", "𝘶", "𝙐", 
+        "𝗲", "𝙪", "𝚞", "Ⓤ", "ⓤ", "🅤", "🅄", "𝐮", "ᵘ", "ᵤ", "🇺", "ｕ", "ᶸ", "ᴜ", "ᑌ", "ս"
+    ];
+
+automod.obfuscation.v =
+    [
+        "v", "V", "√", "ʌ", "ν", "v", "ⱱ", "ѵ", "𝓋", "𝔳", "𝕧", "ט", "𝖛", "𝘷", "𝙑", "𝗲", "𝙫", "𝚟", "Ⓥ", "ⓥ", "🅥", "🅅", "𝐯", "ᵛ", "🇻", 
+        "ʋ", "ᴠ"
+    ];
+
+automod.obfuscation.w =
+    [
+        "w", "W", "ω", "ŵ", "ш", "щ", "ѡ", "ẁ", "ẃ", "ẅ", "ฬ", "𝓌", "𝔴", "𝕨", "𝖜", "𝘸", "𝙒", "𝗲", "𝙬", "𝚠", "Ⓦ", "ⓦ", "🅦", "🅆", 
+        "𝐰", "ʷ", "🇼", "ｗ", "ᴡ"
+    ];
+
+automod.obfuscation.x =
+    [
+        "x", "X", "×", "χ", "х", "ж", "𝓍", "א", "𝔵", "𝕩", "𝖝", "𝘹", "𝙓", "𝗲", "𝙭", "𝚡", "Ⓧ", "ⓧ", "🅧", "🅇", "𝐱", "ˣ", "ₓ", "🇽", "ｘ", 
+        "ҳ"
+    ];
+
+automod.obfuscation.y =
+    [
+        "y", "Y", "¥", "ý", "ÿ", "ŷ", "у", "Ү", "Ұ", "ү", "ყ", "ყ", "ע", "γ", "𝓎", "𝔶", "𝕪", "𝖞", "𝘺", "𝙔", "𝗲", "𝙮", "𝚢", "Ⓨ", "ⓨ", 
+        "🅨", "🅈", "𝐲", "ʸ", "🇾", "☯", "ｙ", "ʏ", "ʎ", "Ꭹ"
+    ];
+
+automod.obfuscation.z =
+    [
+        "z", "Z", "2", "ž", "ź", "ż", "ʐ", "ʑ", "ƶ", "ℤ", "乙", "𝓏", "𝔷", "𝕫", "𝖟", "𝘻", "𝙕", "𝗲", "𝙯", "𝚣", "Ⓩ", "ⓩ", "🅩", "🅉", "𝐳", 
+        "ᶻ", "🇿", "ᴢ", "ᴢ"
+    ];
+
+
+// ————————————————————————————————————————————————————————————————
+// ——————————————————— SEPERATOR CONFIGURATION ————————————————————
+// ————————————————————————————————————————————————————————————————
+// Creates the separators object inside the global automod object
+// then assigns the mapping to it. You cannot create your own
+// separators map, but you can edit the existing one below before
+// the calling of "AutoMod("text")".
+//
+// Note: You can edit any part of the pre-defined separators anywhere using the following lines of code:
+//
+// - automod.separators.push("YOUR_CHARACTER"); Push a new character into the map
+// - automod.separators =
+//       automod.separators.filter(character => character !== "YOUR_CHARACTER"); Remove an existing character from the map
+
+// Creates the separators object and assigns the mapping
+automod.separators = 
+    [
+        " ", "-", ".", "_", "*", "^", "~", "`", "=", "+", ",", "|", "/", "\\", "'", "\"", ":", ";", "(", ")", "[", "]", 
+        "{", "}", "<", ">", "@", "#", "!", "$", "%", "?","\n", "\r", "\t", "\f", "\v", "\u00A0", "\u200B", "\u200C", 
+        "\u200D", "\u2060", "\u180E", "\uFEFF", "\u2063", "\u200E", "\u200F", "\u202A", "\u202B", "\u202C", "\u202D", 
+        "\u202E", "\u0000", "\u0001", "\u0002", "\u0003", "\u0004", "\u0005", "\u0006", "\u0007", "\u0008", "\u000B", 
+        "\u000E", "\u000F", "\u0010", "\u0011", "\u0012", "\u0013", "\u0014", "\u0015", "\u0016", "\u0017", "\u0018", 
+        "\u0019", "\u001A", "\u001B", "\u001C", "\u001D", "\u001E", "\u001F", "\u00AD", "\u034F", "\u061C", "\uFFF9", 
+        "\uFFFA", "\uFFFB", "\uFFFC"
+    ];
+
+
+// ————————————————————————————————————————————————————————————————
+// ——————————————————————— MODULE FUNCTIONS ———————————————————————
+// ————————————————————————————————————————————————————————————————
+// Functions used across this script to power the module.
+
+// Function to replace "automod.separators" characters within a word
+automod.separatorsClear = function(text) {
+    const separators = new Set(automod.separators);
+    const segments = text.match(/\S+|\s+/g);
+
+    return segments
+        .map(segment => {
+            if (segment.trim() === '') {
+                // If muliple spaces, collapse multiple spaces into one
+                return ' ';
+            } else {
+                // segment is a word: remove separators, lowercase
+                return [...segment]
+                    .filter(char => !separators.has(char))
+                    .join('')
+                    .toLowerCase();
+            }
+        })
+        .join('');
+};
+
+// Function to replace "automod.obfuscation" characters within a word
+automod.obfuscationClear = function(word) {
+    const obfuscation = automod.obfuscation;
+
+    // Replace all the obfuscated characters
+    const output = [...word]
+        .map(character => replace_obfuscated(character))
+        .join('');
+
+    return output.toLowerCase();
+
+    // Replace the obfuscated character with base key
+    function replace_obfuscated(character) {
+        for (const [key, group] of Object.entries(obfuscation)) {
+            if (group.includes(character)) return key;
+        }
+        return character;
+    }
+}
+
+// Function to use custom word rules to create a valid regex
+automod.regexCreate = function(rule) {
+    if (rule.startsWith("r:")) {
+        try {
+            return new RegExp(rule.slice(2), "i");
+        } catch {
+            return null;
+        }
+    }
+
+    let regex_string = rule;
+
+    // Check wildcards on first and last characters
+    const wildcard_start = regex_string.startsWith('*');
+    const wildcard_end = regex_string.endsWith('*');
+
+    // Remove the wildcard characters from start/end for processing
+    if (wildcard_start) regex_string = regex_string.slice(1);
+    if (wildcard_end) regex_string = regex_string.slice(0, -1);
+
+    // Temporarily replace all word rules with placeholders to protect their positions
+    regex_string = regex_string
+      .replace(/\(\?/g, "___OPT_START___")
+      .replace(/\)/g, "___OPT_END___")
+      .replace(/\|/g, "___OR___")
+      .replace(/\?/g, "___QUESTION___");
+
+    // Escape all other regex special characters to treat them literally
+    regex_string = regex_string.replace(/[-\/\\^$+.\[\]{}]/g, '\\$&');
+
+    // Restore the word rules back to original characters
+    regex_string = regex_string
+      .replace(/___OPT_START___/g, "(?")
+      .replace(/___OPT_END___/g, ")")
+      .replace(/___OR___/g, "|")
+      .replace(/___QUESTION___/g, "?");
+
+    // Replace optional space token "(? )" with optional space " ?"
+    regex_string = regex_string.replace(/\(\? \)/g, ' ?');
+    // Convert optional single characters like "(?x)" to "x?"
+    regex_string = regex_string.replace(/\(\?([a-zA-Z]+)\)/g, '($1)?');
+    // Converts OR groups like "(a|b)" to regex group "(a|b)"
+    regex_string = regex_string.replace(/\(([a-zA-Z])\|([a-zA-Z])\)/g, '($1|$2)');
+    // Converts optional OR groups like "(?a|b)" to "(a|b)?"
+    regex_string = regex_string.replace(/\(\?([a-zA-Z\|]+)\)/g, '($1)?');
+
+    // Re-wrap the wildcards when applicable
+    if (wildcard_start && wildcard_end) {
+        regex_string = `.*${regex_string}.*`;
+    } else if (wildcard_start) {
+        regex_string = `.*${regex_string}`;
+    } else if (wildcard_end) {
+        regex_string = `${regex_string}.*`;
+    } else {
+        regex_string = `\\b${regex_string}\\b`;
+    }
+
+    try {
+        return new RegExp(regex_string, "i");
+    } catch {
+        return null;
+    }
+}
+
+// Function to use spaces to create a valid regex out of blacklisted words
+automod.regexSpaceCreate = function(regex) {
+    const pattern = regex.source;
+    let result = '';
+    let in_escape = false;
+    let in_class = false;
+    let in_group = false;
+
+    for (let i = 0; i < pattern.length; i++) {
+        const char = pattern[i];
+
+        if (in_escape) {
+            result += '\\' + char;
+            in_escape = false;
+            continue;
+        }
+
+        if (char === '\\') {
+            in_escape = true;
+            continue;
+        }
+
+        result += char;
+
+        // Handle character classes like [a-z]
+        if (char === '[') in_class = true;
+        if (char === ']') in_class = false;
+
+        // Handle groups like (a|b)
+        if (char === '(') in_group = true;
+        if (char === ')') in_group = false;
+
+        const next = pattern[i + 1];
+
+        // Avoid spacing inside groups, classes, or after quantifiers
+        if (
+            i < pattern.length - 1 &&
+            !in_class &&
+            !in_group &&
+            !['*', '+', '?', '|', ')', '(', '{', '}'].includes(next) &&
+            !['*', '+', '?', '|', '(', ')'].includes(char)
+        ) {
+            result += '\\s*';
+        }
+    }
+
+    return new RegExp(result, regex.flags);
+}
+
+// Function to test if a word is blocked
+automod.test = function(text) {
+    const original_text = text;
+    const text_formatted = automod.separatorsClear(automod.obfuscationClear(text));
+
+    for (const filter of Object.values(automod.filters)) {
+        if (!filter.active) continue;
+        if (filter.bypass) continue;
+
+        const whitelist = filter.whitelist || [];
+        const blacklist = filter.blacklist || [];
+
+        // Whitelist check
+        for (const whitelist_pattern of whitelist) {
+            const whitelist_regex = automod.regexCreate(whitelist_pattern);
+            const test_text = (true || whitelist_pattern.startsWith("r:")) 
+                ? original_text 
+                : text_formatted;
+            if (whitelist_regex?.test(test_text)) return { blocked: false };
+        }
+
+        // Blacklist check
+        for (const black_pattern of blacklist) {
+            const blacklist_regex = automod.regexCreate(black_pattern);
+            let spaced_regex;
+
+            try {
+                spaced_regex = automod.regexSpaceCreate(blacklist_regex);
+            } catch {
+                spaced_regex = null;
+            }
+
+            const test_text = black_pattern.startsWith("r:") ? original_text : text_formatted;
+
+            const match = 
+                blacklist_regex?.exec(test_text) || 
+                spaced_regex?.exec(test_text);
+
+            if (match) {
+                return {
+                    name: filter.name,
+                    group: filter.group,
+                    severity: filter.severity,
+                    message: filter.message,
+                    matched: black_pattern,
+                    flagged: match[0],
+                    regex: (blacklist_regex?.toString() || ''),
+                    regex_spaced: (spaced_regex?.toString() || ''),
+                    blocked: true
+                };
+            }
+        }
+    }
+
+    return { blocked: false };
+};
+
+
   const input = document.getElementById('inputBox');
   const output = document.getElementById('output');
 
@@ -133,19 +858,7 @@
       return;
     }
 
-    try {
-      const response = await fetch('https://api.avatarka.ge/v1/automod', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text })
-      });
-
-      if (!response.ok) {
-        output.innerHTML = "Error fetching filter results.";
-        return;
-      }
-
-      const data = await response.json();
+      const data = automod.test(text);
 
       if (data.blocked) {
         const flaggedUsername = "Username";
@@ -194,11 +907,6 @@
       } else {
         output.innerHTML = "";
       }
-
-    } catch (error) {
-      output.innerHTML = "Error processing your request.";
-      console.error(error);
-    }
   }
 
   input.addEventListener('input', (e) => {
