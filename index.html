@@ -147,8 +147,8 @@
       const data = await response.json();
 
       if (data.blocked) {
-        const flaggedUsername = "Username"; // Replace with actual username
-        const flaggedHandle = "@username";  // Replace with actual handle
+        const flaggedUsername = "Username";
+        const flaggedHandle = "@username";
         
         const matchedWord = data.flagged;
         const reason = {
@@ -159,7 +159,7 @@
         const matchedListType = data.group;
 
         function escapeRegExp(string) {
-            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape special regex chars
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         }
 
         function highlightFlaggedWord(text, flagged) {
