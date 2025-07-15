@@ -3,17 +3,24 @@
 <head>
 <meta charset="UTF-8" />
 <title>@avatarkage/automod</title>
-<link rel="icon" href="https://automod.avatarkage.com/logo.png">
-<meta property="og:title" content="@avatarkage/automod">
-<meta property="og:description" content="Upcoming AutoMod API for external apps. Created by AvatarKage and released under MIT license.">
-<meta itemprop="thumbnailUrl" content="https://automod.avatarkage.com/icon.png">
-<meta itemprop="image" content="https://automod.avatarkage.com/icon.png">
-<meta itemprop="imageUrl" content="https://automod.avatarkage.com/icon.png">
-<meta itemprop="og:image" content="https://automod.avatarkage.com/icon.png">
-<meta property="og:url" content="https://automod.avatarkage.com">
-<meta property="og:type" content="website">
-<meta name="theme-color" content="#4c58e6">
-<meta name="author" content="AvatarKage">
+<link rel="icon" href="https://automod.avatarkage.com/logo.png" type="image/png" />
+<meta property="og:title" content="@avatarkage/automod" />
+<meta property="og:description" content="Upcoming AutoMod API for external apps. Created by AvatarKage and released under MIT license." />
+<meta property="og:image" content="https://us-east-1.tixte.net/uploads/cdn.avatarka.ge/automod_banner_png.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:url" content="https://automod.avatarkage.com" />
+<meta property="og:type" content="website" />
+<meta itemprop="name" content="@avatarkage/automod" />
+<meta itemprop="description" content="Upcoming AutoMod API for external apps. Created by AvatarKage and released under MIT license." />
+<meta itemprop="image" content="https://us-east-1.tixte.net/uploads/cdn.avatarka.ge/automod_banner_png.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="@avatarkage/automod" />
+<meta name="twitter:description" content="Upcoming AutoMod API for external apps. Created by AvatarKage and released under MIT license." />
+<meta name="twitter:image" content="https://us-east-1.tixte.net/uploads/cdn.avatarka.ge/automod_banner_png.png" />
+<meta name="twitter:url" content="https://automod.avatarkage.com" />
+<meta name="theme-color" content="#4c58e6" />
+<meta name="author" content="AvatarKage" />
 
 <style>
     @font-face {
@@ -108,411 +115,94 @@
 
 <div class="scale-wrapper">
     <div class="box" style="font-size: 14px; text-align: center;">
-        <b>AutoMod Filters API</b><br>
-        <div style="font-size: 12px; margin-top: 4px;">https://api.avatarka.ge/v1/automod (soon)</div><br>
+        <b>AutoMod API</b><br>
+        <div style="font-size: 12px; margin-top: 4px;">https://api.avatarka.ge/v1/automod</div><br>
         <textarea id="inputBox" placeholder="Type something..." autocomplete="off"></textarea>
         <div id="output" class="info"></div>
     </div>
 </div>
 
 <script>
-    if (typeof automod === "undefined") automod = {};
-    if (typeof automod.filters === "undefined") automod.filters = {};
+  const input = document.getElementById('inputBox');
+  const output = document.getElementById('output');
 
-    const filters = [
-            {
-                name: "Discriminatory",
-                severity: "High",
-                words: ["*(🥷|🆖)*", "(?g)ga", "*n(i|e)g(a|g|h)(h|r|e|a)(?a|r)(?rs|s)*", "ig(?g)(r|e|a)(?a)(?rs|r|s)", "neg(?g)a(?r)(?s)", 
-                    "ng", "nig(?g|e)(?r)(?s)", "*f(?a)ag*", "*retard*",
-                    "coon(?s)", "*kike*", "yid(?s)", "*chink*", "ching(?s)", "*gook*", "*slopehead*", "jap(?s)",
-                    "*china(? )(wo)m(a|e)n*", "*coolie*", "*sambo*", "*tar(? )baby*", "*jemima(?s)*", "*mamm(?y|ies|s)*",
-                    "*pick(? )aninn(?y|ies|s)*", "*gay(? )lord(?s)*", "*dyke*", "*she(? )male*", "*trann(?y|ies|s)*",
-                    "*transvestite*", "*cripple*", "*white(? )power*", "n(? )word(?s)", "r(? )word(?s)", "cong(?s)",
-                    "*siss(?y|ies|s)*", "hard(?s)r", "*kanker(?s)*", "*lesbo(?s)*", "chong(?s)", "*cotton(? )picker*",
-                    "ninja(? )emoji", "ng(? )emoji"
-                ],
-                message: "This word has been blocked",
-                bypass: ""
-            },
-            {
-                name: "Sexually Explicit",
-                severity: "High",
-                words: ["*(🍆|🍌|🍑|🍇)*", "*(1|2|one|two)(? )cup(?s)(? )(1|2|one|two)(? )(boy|girl|man|woman|guy|gal|dude|chick)*",
-                    "*(1|2|one|two)(? )(boy|girl|man|woman|guy|gal|dude|chick)(?s)(? )(1|2|one|two)(? )cup*", "*(1|2|one|two)(? )c(?s)(? )(1|2|one|two)(? )g*",
-                    "*(1|2|one|two)(? )g(?s)(? )(1|2|one|two)(? )c*", "anal(?s)", "anus(?es)", "ass(?es)", "*philia*", "*alabama(? )hot(? )pocket*",
-                    "*alaskan(? )pipeline*", "*anilingus*", "*erotic*", "*b(a|e)b(y|e)(? )(land|batter|beater|juice|water|liquid)*",
-                    "*(ball)(?s)(? )(gag|gravy|kick|lick|sack|suck)(?ing|er)*", "bang", "*bareback*", "*barely(? )legal*", "naked(?)(!eye)", 
-                    "nud(e|it|iti)(?i|s|ie|ies|y)(?i|t|e|y)(?s|y)(?s|ie|ies)",  "bbw", "*bdsm*", "*big(? )knocker*", "bimb(?s)", "*bird(? )lock*", 
-                    "*(action|blonde|brunette)(? )(?on)(? )(action|blonde|brunette)*", "*blow(? )(?your)(? )(job|load)*", "*blue(? )waffle*", "*blumpkin*", 
-                    "*bondag*", "*boner*", "*boob*", "*booty*", "breast(?s)(? )(!cancer)", "*(golden|yellow|brown)(? )shower*", "*bukkake*", "*bullet vibe*",
-                    "*busty*", "*butt*", "*(cam|camera)(? )(boy|girl|man|woman|guy|gal|dude|chick)(?s)*", "*camel(? )toe*", "*carpet(? )muncher*", 
-                    "*chocolate(? )rose*", "*circle(? )jerk*", "*clit*", "*clover(? )clamp*", "*cluster(? )fuck*", "*coprolagnia*", 
-                    "*corn(? )hole*", "*cream(? )pie*", "*cunnilingus*", "*deep(? )throat*", "*dildo*", "*dirty(? )sanchez*", "*dog(?g|i|y)(?y|i|e|ie)(?s)(? )style*", 
-                    "*dolcett*", "*dominatrix*", "*dommes*", "*double(? )dong*", "*double(? )penetration*", "*dp(? )action*", "*dry(? )hump*", "*dvda*", 
-                    "*ejaculation*", "erect*", "*eroti*", "*fellatio*", "*feltch*", "*squirting*", "*f(e|r)mbo(y|i)*", "*femdom*", "*fetish*", "*figging*", 
-                    "*fingerbang*", "*fingered*", "*fingeri*", "*fleshlight*", "*(foot|hand)(? )job*", "*(3|4|5|6|7|8|9|three|four|five|six|seven|eight|nine)some*",
-                    "*frotting*", "*fudge(? )packer*", "*fudgepacker*", "*futanari*", "*g(? )spot*", "*genitals*", "*cock*",
-                    "*(boy|girl|man|woman|guy|gal|dude|chick)(?s)(? )on(? )(top|bottom)*", "*(boy|girl|man|woman|guy|gal|dude|chick)(?s)(? )gone(? )wild*", "*goatse*",
-                    "*gokkun*", "*goo(? )girl*", "*or(?e)gasm*", "*grope*", "*sex(!uality|ualities)*", "guro", 
-                    "*henta*", "*hooker*", "*horn(i|y)*", "*hot(? )(carl|boy|girl|man|woman|guy|gal|dude|chick)*", "humpin(?g)", "*incest*", "*intercourse*", 
-                    "*j(ac|er)(?k)(?in|ing)(? )off*", "*j(ac|er)(?k)(? )mate*", "*jail(? )bait*", "jelly(? )donut(!s)", "*jerk*", "*jizz*", "*juggs*", "*kink*",
-                    "*leather(? )(straight|restraint)(? )jacket*", "*lemon(? )party*", "*lewd*", "*loli(!pop)(?t|a|ta)*", "*love(? )making*", "*lust*",
-                    "cum(?m)(?ing|ed)(?s)", "*puss(y|ies)*", "*mastu*", "*menage(? )a(? )trois*", "*(m|d|f)ilf*", "*missionary*", "*(mound|venus)(? )of(? )(mound|venus)*",
-                    "*muff(? )div(?er|ing)*", "(?deeez|deez|dez|dz)(? )nut(?s)", "nipp(el|le)(?s)", "*nymphomania*", "*omorashi*", "*only(? )fan*",
-                    "org(y|ies)", "*phile*", "*peg(?g|s)(?ing|s)*", "*pek(? )pek*", "*pleasure(? )chest*", "*poop(? )chute*", "*po(?u)rn*", 
-                    "*prince(? )albert(? )piercing*", "*prosti*", "*pubes*", "*public(? )hair*", "*punany*", "*que(a|e)f*", "*rim(? )job*", 
-                    "*rimm(ed|ing)*", "*ros(e|y)(? )(toy|palm)*", "*r(?ule)(? )34*", "*rusty(? )trombone*", "s(&|and)m(?s)", 
-                    "*sadism*", "*scat*", "*schlong*", "*scissor(ing|ed)*", "semen(?s)", "*shave(?d)(? )beaver*", "*shibari*", "*shota*", "*shrimp(ed|ing)*", "*skeet*", 
-                    "*smash*", "*s(l|m)ut*", "*snowballin*", "*sodom(y|ize)*", "*spread(? )legs*", "*spunk*", "*strap(? )(on|pad)(?o)*",
-                    "*strip*", "*swinger*", "*tainted(? )love*", "*taste(? )my(? )teabag*", 
-                    "*tea(? )bagging*", "*tight(? )white*", "*tongue(? )in*", "*topless*", "*tribadism*", "*tub(? )(boy|girl|man|woman|guy|gal|dude|chick)*",
-                    "*tushy*", "*up(? )skirt*", "*urethra*", "*vagina*", "*viagra*", "*vibrator*", "*violet(? )wand*", "*voy(e|u)(e|u)r*", 
-                    "*vulva*", "*wank*", "*wet(? )dream*", "*wrapping(? )(boy|girl|man|woman|guy|gal|dude|chick)*", "*wrinkled(? )starfish*", "xxx",
-                    "*yaoi*", "*yarichin*", "ybc", "*yuri*", "*zoophi*", "*(cnut|thot)*", "*darkie*", "*whor(?e)*", "ho(?e)(?s)","*honkey*", "*jig(g|a)(?g|a)*",
-                    "*goon*", "*(father|mother)(? )f*", "*tosser*", "*twat*", "(go|to)(? )fuck", "(eat|suck)(? )(ass|butt)", "*sybau*",
-                    "*twink*", "*molest*", "*hose(? )mad*", "c(o|u)m(?s|shot)(?s)", "*fmby*", "*ambatukam*", "*عبيد*", "smd(?s)", 
-                    "*touch(? )you*", "fap(?p)(?ing|ed)(?s)", "ph", "*kurwa*", "*hot(? )18*", "*hot(? )(teen|10|ten)*", "*t3(?3)n*",
-                    "*honker(?s)*", "*ti(t|d)(?d)(?y)(?s)*", "*submissive*", "*fucker*", "*seduce*", 
-                    "*sle(pt|ep|eping)(? )with*", "*p(e|d)(do|file)*", "ped", "*f(?u)(?c)k(? )of(?f)*", 
-                    "*sausag*", "sek(?s)", "*wanna(?s)have(?s)(6|six)*", "*want(?s)(?to)(?s)have(?s)(6|six)*", 
-                    "*(see|sea)(?s)you(?s)(4|four|for|fr)(?s)(6|six)*",
-                    "*penile*", "*grape(?s|ed)(you|him|them|her)*", "(his|my|your)(?s)(d|c)", "*ngentott*", "v(?a|er)gin(?s)", "*penetration*", 
-                    "*anilingus*", "*bellend*", "prn, *eggplant(? )emoji*", "*banana(? )emoji*", "*peach(? )emoji*", "*grape(? )emoji*",
-                    "*foreskin*", "*slave*", "*moan*", "*pant(y|ies)*", "kbs", "*chesh*", "h(? )anime", 
-                    "cox(?x), *gyat(?t)*", "*uterus*", "*asswipes*", "*twin(?u)k*", 
-                    "(you|youre|he|she|they)(? )(?is|are)(? )(?a)(? )knob", "*genita*", "*wel(? )cu(?m)*", "*feet(? )pic*", "*condom*", "*dadd(y|ie)*", 
-                    "sma(?s)", "dih(?h)", "*mfker*", "f(?u)(?c)k(? )(me|you|him|her|them|us|all)", "*penis*", "*dick*", "*cock*", "ra(?y)pe"
-                ],
-                message: "This word has been blocked",
-                bypass: ""
-            },
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            {
-                name: "Profanity",
-                severity: "Low",
-                words: ["*🖕*", "*middle(? )finger*", "*bi(?a)tch*", "*ar(?r)se(? )hole*", "*as(?s)(? )hole*", 
-                "*basta(?r)(?d)*", "*b(o|u)l(?l)(? )lock*", "*stfu*", "*piss*", "*dumbas(?s)*", "*shit*",
-                "*you(?r)(?e)(? )(?a)(? )birch*", "*bish*", "*f(?u)(c|k)*", "*f****", "*s****"],
-                message: "This word has been blocked",
-                bypass: ""
-            },
-            {
-                name: "Profanity Abbreviations",
-                severity: "Low",
-                words: ["fml", "mf", "(?w)tf", "*my(? )(god|lord)*", "o(m|n)(?f)(g|l)", "ist(g|l)",
-                "lm(?f)(a|b)o", "*🤬*", "*(⛱️|🏖️)*"],
-                message: "This word has been blocked",
-                bypass: ""
-            }
-        ];
-
-    for (const filter of filters) {
-        const key = filter.name.toLowerCase().replace(/\s+/g, "_");
-        automod.filters[key] = filter;
+  async function checkText(text) {
+    if (!text) {
+      output.innerHTML = "";
+      return;
     }
 
-     const obfuscation_map = {
-            // This object maps standard characters to regex character classes of obfuscated versions
-            a: "[aA4@ÁÀÂÄÃÅĀĂĄαΔΛД∆𝒶𝔞𝕒𝖆𝘢𝘼𝗮𝙖𝚊Ⓐⓐ🅐🄰𝐚𝖺ᵃₐ𝛂𝛼🇦]",
-            b: "[bB8ß฿βБ𝒷𝔟𝕓𝖇𝘣𝘽𝗯𝙗𝚋Ⓑⓑ🅑🄱𝐛ᵇ𝛃𝛽🇧]",
-            c: "[cC¢©çĆČĈĊςʗС𐐕𝒸𝔠𝕔𝖈𝘤𝘾𝗰𝙘𝚌Ⓒⓒ🅒🄲𝐜ᶜ𝛾🇨]",
-            d: "[dDÐĎĐԀԁԃδȡ𝒹𝔡𝕕𝖉𝘥𝘿𝗱𝙙𝚍Ⓓⓓ🅓🄳𝐝ᵈ𝛅🇩]",
-            e: "[eE3€éèêëēėęΞΣƐ𝑒𝔢𝕖𝖊𝘦𝙀𝗲𝙚𝚎Ⓔⓔ🅔🄴𝐞ᵉₑ🇪]",
-            f: "[fFƒҒ₣𝒻𝔣𝕗𝖋𝘧𝙁𝗳𝙛𝚏Ⓕⓕ🅕🄵𝐟ᶠ🇫]",
-            g: "[gG69ĝğġģɢǥ₲𝓰𝔤𝕘𝖌𝘨𝙂𝗴𝙜𝚐Ⓖⓖ🅖🄶𝐠ᵍ🇬]",
-            h: "[hHĥħнннĦ#𝒽𝔥𝕙𝖍𝘩𝙃𝗵𝙝𝚑Ⓗⓗ🅗🄷𝐡ʰₕ🇭]",
-            i: "[iI1!íìîïīįιІ¡|ǐ𝒾𝔦𝕚𝖎𝘪𝙄𝗶𝙞𝚒Ⓘⓘ🅘🄸𝐢ᶦᵢ🇮*]",
-            j: "[jJĵʝјЈ¿𝒿𝔧𝕛𝖏𝘫𝙅𝗷𝙟𝚓Ⓙⓙ🅙🄹𝐣ʲ🇯]",
-            k: "[kKĸκķĶⱩҠк𝓀𝔨𝕜𝖐𝘬𝙆𝗸𝙠𝚔Ⓚⓚ🅚🄺𝐤ᵏₖ🇰]",
-            l: "[lL1|£łĿĹĻĽ⅃∣𝓁𝔩𝕝𝖑𝘭𝙇𝗹𝙡𝚕Ⓛⓛ🅛🄻𝐥ˡₗ🇱]",
-            m: "[mM₥µмṃṁмм𝓂𝔪𝕞𝖒𝘮𝙈𝗺𝙢𝚖Ⓜⓜ🅜🄼𝐦ᵐₘ🇲]",
-            n: "[nNñńņňŉηпПИИ∏𝓃𝔫𝕟𝖓𝘯𝙉𝗻𝙣𝚗Ⓝⓝ🅝🄽𝐧ⁿₙ🇳]",
-            o: "[oO0°øõöôóòœōΘФ¤◎𝓸𝔬𝕠𝖔𝘰𝙊𝗼𝙤𝚘Ⓞⓞ🅞🄾𝐨ᵒₒ🇴ꚙ]",
-            p: "[pPþρрҏ₱¶℗℘𝓅𝔭𝕡𝖕𝘱𝙋𝗽𝙥𝚙Ⓟⓟ🅟🄿𝐩ᵖₚ🇵]",
-            q: "[qQ9ǫզԛɋʠ𝓆𝔮𝕢𝖖𝘲𝙌𝗾𝙦𝚚Ⓠⓠ🅠🅀𝐪🇶]",
-            r: "[rR®řŗгѓґяЯ𝓇𝔯𝕣𝖗𝘳𝙍𝗿𝙧𝚛Ⓡⓡ🅡🅁𝐫ʳ🇷]",
-            s: "[sS5$§šśșșѕꜱʂ𝓈𝔰𝕤𝖘𝘴𝙎𝘀𝚠Ⓢⓢ🅢🅂𝐬ˢₛ🇸]",
-            t: "[tT7+†ţŧтт𝓉𝔱𝕥𝖙𝘵𝙏𝗲𝙩𝚝Ⓣⓣ🅣🅃𝐭ᵗₜ🇹]",
-            u: "[uU(_)|üûùúūųµџцџʉ𝓊𝔲𝕦𝖚𝘶𝙐𝗲𝙪𝚞Ⓤⓤ🅤🅄𝐮ᵘᵤ🇺]",
-            v: "[vV√ʌνvⱱѵ𝓋𝔳𝕧𝖛𝘷𝙑𝗲𝙫𝚟Ⓥⓥ🅥🅅𝐯ᵛ🇻]",
-            w: "[wWωŵшщѡẁẃẅ𝓌𝔴𝕨𝖜𝘸𝙒𝗲𝙬𝚠Ⓦⓦ🅦🅆𝐰ʷ🇼]",
-            x: "[xX×χхж𝓍𝔵𝕩𝖝𝘹𝙓𝗲𝙭𝚡Ⓧⓧ🅧🅇𝐱ˣₓ🇽]",
-            y: "[yY¥ýÿŷуҮҰүγ𝓎𝔶𝕪𝖞𝘺𝙔𝗲𝙮𝚢Ⓨⓨ🅨🅈𝐲ʸ🇾☯]",
-            z: "[zZ2žźżʐʑƶℤ𝓏𝔷𝕫𝖟𝘻𝙕𝗲𝙯𝚣Ⓩⓩ🅩🅉𝐳ᶻ🇿]",
-        };
+    try {
+      const response = await fetch('https://api.avatarka.ge/v1/automod', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
 
-        // Characters here are removed when checking filters
-        const separators = [
-            " ", "-", ".", "_", "*", "^", "~", "`", "=", "+", ",", "|", "/", "\\", "'", "\"", ":", ";", 
-            "(", ")", "[", "]", "{", "}", "<", ">", "@", "#", "!", "$", "%", "?", "\n", "\r",
-            "\u200b", "\u200c", "\u200d", "\u2060"
-        ];
+      if (!response.ok) {
+        output.innerHTML = "Error fetching filter results.";
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.blocked) {
+        const flaggedUsername = "Username"; // Replace with actual username
+        const flaggedHandle = "@username";  // Replace with actual handle
         
-    function escapeRegex(s) {
-        return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
+        const matchedWord = data.flagged;
+        const reason = {
+          name: data.name,
+          severity: data.severity,
+          message: data.message
+        };
+        const matchedListType = data.group;
 
-    // Updated buildWordRegex: supports exceptions with separators allowed after base word
-    function buildWordRegex(word) {
-          const sepClass = `[${escapeRegex(separators.join(''))}]*`;
-
-    const prefixWildcard = word.startsWith("*");
-    const suffixWildcard = word.endsWith("*");
-
-    let baseWord = word.replace(/^\*|\*$/g, "").toLowerCase();
-
-    // Handle multiple exceptions separated by |
-    const exceptionRegex = /\(!([^)]+)\)/g;
-    let exceptions = [];
-    baseWord = baseWord.replace(exceptionRegex, (match, excGroup) => {
-        exceptions.push(...excGroup.split('|'));
-        return "";
-    });
-
-    // Build main pattern
-    let pattern = "";
-    let i = 0;
-    while (i < baseWord.length) {
-        const ch = baseWord[i];
-
-        // Handle optional group (e.g., (?...))
-        if (ch === '(' && baseWord[i + 1] === '?') {
-            i += 2;
-            let group = "";
-            let depth = 1;
-            while (i < baseWord.length && depth > 0) {
-                const c = baseWord[i];
-                if (c === '(') depth++;
-                else if (c === ')') depth--;
-                if (depth > 0) group += c;
-                i++;
-            }
-
-            if (group.includes('|')) {
-                const options = group.split('|').map(opt =>
-                    opt.split('').map(c => obfuscation_map[c] || escapeRegex(c)).join(sepClass)
-                );
-                pattern += `(?:${options.join('|')})?`;
-            } else {
-                const charPattern = obfuscation_map[group] || escapeRegex(group);
-                pattern += `(?:${charPattern}${sepClass})?`;
-            }
-
-        // Handle alternatives (e.g., (ual|lex))
-        } else if (ch === '(') {
-            let group = "";
-            let depth = 1;
-            i++;
-            while (i < baseWord.length && depth > 0) {
-                const c = baseWord[i];
-                if (c === '(') depth++;
-                else if (c === ')') depth--;
-                if (depth > 0) group += c;
-                i++;
-            }
-
-            const options = group.split('|').map(opt =>
-                opt.split('').map(c => obfuscation_map[c] || escapeRegex(c)).join(sepClass)
-            );
-            pattern += sepClass + `(?:${options.join('|')})` + sepClass;
-
-        } else {
-            const charPattern = obfuscation_map[ch] || escapeRegex(ch);
-            pattern += charPattern;
-            if (i < baseWord.length - 1) {
-                pattern += sepClass;
-            }
-            i++;
-        }
-    }
-
-    // Negative lookahead for exceptions
-    let negativeLookaheads = "";
-    for (const exc of exceptions) {
-        const excPattern = exc.split('').map(c => escapeRegex(c)).join(sepClass);
-        negativeLookaheads += `(?!${sepClass}${excPattern})`;
-    }
-
-    // Final pattern with word boundaries and wildcards
-    if (prefixWildcard && suffixWildcard) {
-        pattern = `(?<!\\S)\\S*${pattern}${negativeLookaheads}\\S*(?!\\S)`;
-    } else if (prefixWildcard) {
-        pattern = `(?<!\\S)\\S*${pattern}${negativeLookaheads}(?!\\S)`;
-    } else if (suffixWildcard) {
-        pattern = `(?<!\\S)${sepClass}${pattern}${negativeLookaheads}${sepClass}(?!\\S)`;
-    } else {
-        pattern = `(?<!\\S)${sepClass}${pattern}${negativeLookaheads}${sepClass}(?!\\S)`;
-    }
-
-    return new RegExp(pattern, "i");
-}
-
-// Utility function to safely escape regex characters
-function escapeRegex(text) {
-    return text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-}
-
-    function highlight(text, regex) {
-        const sepPattern = separators.map(s => `\\${s}`).join('');
-        return text.replace(regex, match => {
-            // Strip separators around match to highlight only the core word
-            let leading = '', trailing = '', core = match;
-
-            const leadingMatch = core.match(new RegExp(`^[${sepPattern}]+`));
-            if (leadingMatch) {
-                leading = leadingMatch[0];
-                core = core.slice(leading.length);
-            }
-
-            const trailingMatch = core.match(new RegExp(`[${sepPattern}]+$`));
-            if (trailingMatch) {
-                trailing = trailingMatch[0];
-                core = core.slice(0, -trailing.length);
-            }
-
-            return `${leading}<mark>${core}</mark>${trailing}`;
-        });
-    }
-
-    const inputBox = document.getElementById("inputBox");
-    const output = document.getElementById("output");
-    const username = "Username";
-    const handle = "@username";
-    const checkExtras = true;
-
-    inputBox.addEventListener("input", () => {
-        const val = inputBox.value;
-        const extraText = checkExtras ? `${username} ${handle}` : "";
-
-        let highlightText = val;
-        let highlightUsername = username;
-        let highlightHandle = handle;
-        let blocked = false;
-        let reason = null;
-        let source = "";
-        let matchedWord = "";
-
-        const matches = [];
-
-        // Check username and handle first
-        for (const key in automod.filters) {
-            const filter = automod.filters[key];
-            for (const word of filter.words) {
-                const regex = buildWordRegex(word);
-
-                if (checkExtras && regex.test(username)) {
-                    blocked = filter.bypass !== "AvatarKage";
-                    reason = filter;
-                    matchedWord = word;
-                    source = "Username";
-                    highlightUsername = highlight(username, regex);
-                    break;
-                }
-
-                if (checkExtras && regex.test(handle)) {
-                    blocked = filter.bypass !== "AvatarKage";
-                    reason = filter;
-                    matchedWord = word;
-                    source = "Handle";
-                    highlightHandle = highlight(handle, regex);
-                    break;
-                }
-            }
-            if (blocked) break;
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape special regex chars
         }
 
-        if (!blocked) {
-            for (const key in automod.filters) {
-                const filter = automod.filters[key];
-                for (const word of filter.words) {
-                    const regex = buildWordRegex(word);
-                    if (regex.test(val)) {
-                        matches.push({ regex, word, filter });
-                    }
-                }
-            }
-
-            if (matches.length > 0) {
-                blocked = matches[0].filter.bypass !== "AvatarKage";
-                reason = matches[0].filter;
-                matchedWord = matches[0].word;
-                source = "Message";
-
-                const { regex } = matches[0];
-                highlightText = highlight(highlightText, regex);
-            }
+        function highlightFlaggedWord(text, flagged) {
+            if (!flagged) return text;
+            const escapedFlagged = escapeRegExp(flagged);
+            // Replace all occurrences, case-insensitive
+            return text.replace(new RegExp(`(${escapedFlagged})`, 'gi'), '<mark>$1</mark>');
         }
 
-        if (blocked) {
-            let flaggedText;
-            if (source === "Username") {
-                const regex = buildWordRegex(matchedWord);
-                flaggedText = highlightUsername.replace(regex, match => `<mark>${match}</mark>`);
-            } else if (source === "Handle") {
-                const regex = buildWordRegex(matchedWord);
-                flaggedText = highlightHandle.replace(regex, match => `<mark>${match}</mark>`);
-            } else {
-                flaggedText = highlightText.replace(/\n/g, '<br>');
-            }
-            output.innerHTML = `
-                <div class="box_inner" style="position: relative;">
-                    <img src="logo.png" width="16px" style="position: absolute; top: 16px; right: 16px;">
-                    <div style="display: flex; margin-bottom: 16px;">
-                        <div style="font-size: 16px; display: flex; align-items: center; text-align: left;">
-                            <img width="32px" style="border-radius: 32px; margin-right: 8px;" src="pfp.png">
-                            <div style="display: flex; flex-direction: column; line-height: 1.2;">
-                                <span><b>${source === "Username" ? flaggedText : username}</b></span>
-                                <span style="font-size: 12px; opacity: 0.65;">${source === "Handle" ? flaggedText : handle}</span>
-                            </div>
+        output.innerHTML = `
+            <div class="box_inner" style="position: relative;">
+                <img src="logo.png" width="16px" style="position: absolute; top: 16px; right: 16px;">
+                <div style="display: flex; margin-bottom: 16px;">
+                    <div style="font-size: 16px; display: flex; align-items: center; text-align: left;">
+                        <img width="32px" style="border-radius: 32px; margin-right: 8px;" src="pfp.png">
+                        <div style="display: flex; flex-direction: column; line-height: 1.2;">
+                            <span><b>${flaggedUsername}</b></span>
+                            <span style="font-size: 12px; opacity: 0.65;">${flaggedHandle}</span>
                         </div>
                     </div>
-                    <div style="display: flex; align-items: flex-start; font-size: 14px; margin-bottom: 16px; text-align: left;">
-                        <span class="vr"></span><div style="flex: 1;">${highlightText.replace(/\n/g, '<br>')}</div>
-                    </div>
-                    <div style="font-size: 10px; text-align: left; opacity: 0.65;">
-                        <b>Keyword: </b>${matchedWord} • <b>Filter: </b>${reason.name} (${reason.severity} Priority) • <b>Source: </b>${source}
-                        <br><b>Message: </b>${reason.message}
-                    </div>
                 </div>
-            `;
-        } else {
-            output.innerHTML = "";
-        }
-    });
+                <div style="display: flex; align-items: flex-start; font-size: 14px; margin-bottom: 16px; text-align: left;">
+                    <span class="vr"></span><div style="flex: 1;">${highlightFlaggedWord(text, data.flagged)}</div>
+                </div>
+                <div style="font-size: 10px; text-align: left; opacity: 0.65;">
+                    <b>Keyword: </b>${data.matched} • <b>Filter: </b>${reason.name} (${reason.severity} Priority) • <b>Type: </b>${matchedListType}
+                    <br><b>Message: </b>${reason.message}
+                </div>
+            </div>
+        `;
+      } else {
+        output.innerHTML = "";
+      }
+
+    } catch (error) {
+      output.innerHTML = "Error processing your request.";
+      console.error(error);
+    }
+  }
+
+  input.addEventListener('input', (e) => {
+    checkText(e.target.value);
+  });
 </script>
 
 </body>
